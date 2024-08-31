@@ -66,9 +66,9 @@ async def get_users(user: User, response_model = UserListResponse):
 
 # Pydantic 모델 정의
 class User(BaseModel):
-    id: str
+    userId: str
     password: str
-    name: str
+    username: str
     country: str
 
 class UserListResponse(BaseModel):
@@ -80,16 +80,16 @@ async def insert_item(user: User):
     """
     데이터를 'user' 테이블에 삽입하는 엔드포인트입니다.
     
-    - **id**: ID (필수)
+    - **userId**: ID (필수)
     - **password**: 비밀번호 (필수)
-    - **name**: 이름 (필수)
+    - **username**: 이름 (필수)
     - **country**: 국가 (필수)
     """
     print("데이터 삽입 시작")
 
     # id 필드가 있는지 여부에 따라 다른 INSERT 쿼리를 생성
 
-    if len(user.id)<=0 or len(user.id)>30:
+    if len(user.userId)<=0 or len(user.userId)>30:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ID는 1글자 이상 30글자 이하여야 합니다."
@@ -99,7 +99,7 @@ async def insert_item(user: User):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="비밀번호는 1글자 이상 25글자 이하여야 합니다."
         )
-    if len(user.name)<=0 or len(user.name)>50:
+    if len(user.username)<=0 or len(user.username)>50:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="이름은 1글자 이상 50글자 이하여야 합니다."
@@ -114,7 +114,7 @@ async def insert_item(user: User):
     try:
         # id 필드가 있는 경우
         query = "INSERT INTO user (id, password, name, country) VALUES (%s, %s, %s, %s)"
-        params = (user.id, user.password, user.name, user.country)
+        params = (user.userId, user.password, user.username, user.country)
     
         # 쿼리 실행
         await database.execute_query(query, params)
