@@ -30,12 +30,12 @@ async def get_users(user: User, response_model = UserListResponse):
     
     '''
 
-    if len(user.userId)<=0 and len(user.userId)>30:
+    if len(user.userId)<=0 or len(user.userId)>30:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ID는 1글자 이상 30글자 이하여야 합니다."
         )
-    if len(user.password)<=0 and len(user.password)>25:
+    if len(user.password)<=0 or len(user.password)>25:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="비밀번호는 1글자 이상 25글자 이하여야 합니다."
@@ -89,22 +89,22 @@ async def insert_item(user: User):
 
     # id 필드가 있는지 여부에 따라 다른 INSERT 쿼리를 생성
 
-    if len(user.id)<=0 and len(user.id)>30:
+    if len(user.id)<=0 or len(user.id)>30:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ID는 1글자 이상 30글자 이하여야 합니다."
         )
-    if len(user.password)<=0 and len(user.password)>25:
+    if len(user.password)<=0 or len(user.password)>25:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="비밀번호는 1글자 이상 25글자 이하여야 합니다."
         )
-    if len(user.name)<=0 and len(user.name)>50:
+    if len(user.name)<=0 or len(user.name)>50:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="이름은 1글자 이상 50글자 이하여야 합니다."
         )
-    if len(user.country)<=0 and len(user.country)>20:
+    if len(user.country)<=0 or len(user.country)>20:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="국가 이름은 1글자 이상 20글자 이하여야 합니다."
