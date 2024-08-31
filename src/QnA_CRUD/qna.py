@@ -48,7 +48,7 @@ async def create_item(text: qa, user_id: str = Header()):
     
     
     
-    return {"message": "Data inserted successfully"}
+    return {"content":text.content}
 
 class qa(BaseModel):
     id: int
@@ -87,7 +87,14 @@ async def read_item():
             detail="예상치 못한 오류가 발생했습니다."
         )
     
-    return {"message": "Data loaded successfully", "result": formatted_result}
+    return {
+
+        "id": formatted_result["id"],
+        "content": formatted_result["content"],
+        "author": formatted_result["author"],
+        "created_at": formatted_result["created_at"]
+
+    }
 
 
 
@@ -141,7 +148,7 @@ async def update_item(postID: int, text: qa, user_id: str = Header()):
             detail="예상치 못한 오류가 발생했습니다."
         )
     
-    return {"message": "Data updated successfully"}
+    return {"content":text.content}
 
 
 
