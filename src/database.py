@@ -6,6 +6,7 @@ import logging
 
 # 환경 변수 로드 및 로깅 설정
 logging.basicConfig(level=logging.INFO)
+load_dotenv()
 
 # 환경 변수에서 MySQL 연결 정보 가져오기
 DB_HOST = os.getenv('DB_HOST')
