@@ -13,7 +13,7 @@ router = APIRouter(
 
 # Pydantic 모델 정의
 class User(BaseModel):
-    id: str
+    userId: str
     password: str
     
 
@@ -22,12 +22,12 @@ async def get_users(user: User):
     '''  
     ID와 password를 받아서 DB에 전달하는 엔드포인트입니다.
     
-    - **id**: 첫 번째 필터 값 (필수)
+    - **userId**: 첫 번째 필터 값 (필수)
     - **password**: 두 번째 필터 값 (필수)
     
     '''
 
-    if len(user.id)<=0 and len(user.id)>30:
+    if len(user.userId)<=0 and len(user.userId)>30:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ID는 1글자 이상 30글자 이하여야 합니다."
@@ -41,7 +41,7 @@ async def get_users(user: User):
 
     try:
         query = 'SELECT * FROM user WHERE id=%s AND password=%s'
-        params = [user.id, user.password]
+        params = [user.userId, user.password]
         result = await database.execute_query(query, tuple(params))
         if len(result) == 0:
             raise HTTPException(
