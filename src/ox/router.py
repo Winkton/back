@@ -67,11 +67,11 @@ class OX(BaseModel):
     answer: bool    
 
 @router.post("", summary="OX 퀴즈 업로드")
-async def getList(ox: OX):
+async def getList(ox: OX, user_id: str = Header()):
     """
     OX 퀴즈를 업로드하는 EndPoint입니다.
     
-    - **userID**: 작성자 ID (필수) (str)
+    - **user_id**: 작성자 ID (필수) (str) (Header)
     - **question**: 질문할 문제 (필수) (str 100자 이하)
     - **answer**: 질문에 대한 답 (필수) (bool)
     """
@@ -82,7 +82,7 @@ async def getList(ox: OX):
             detail="질문 길이는 반드시 1자 이상 100이하여야 됩니다."
         )
         
-    if len(ox.userID) == 0:
+    if len(user_id) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="작성자는 필수입니다."
@@ -90,7 +90,7 @@ async def getList(ox: OX):
         
     try:
         query = "INSERT INTO ox (author, question, answer) VALUES (%s, %s, %s)"
-        params = (ox.userID, ox.question, ox.answer)
+        params = (user_id, ox.question, ox.answer)
         
         await database.execute_query(query, params)
         
@@ -132,9 +132,7 @@ async def modify(postID: int, ox: OXModify, user_id: str = Header()):
     query = "SELECT * FROM ox WHERE author = %s AND id = %s"
     params = (user_id, postID)   
     count = await database.execute_query(query, params)
-    
-    print(count)
-    
+
     if len(count) == 0:  
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -167,16 +165,17 @@ async def delete(postID: int, user_id: str = Header()):
     'ox' 테이블의 데이터를 id를 통해 조회해서 삭제하는 엔드포인트입니다.
     
     - **postID**: 게시글 id (int)
+    - **userID**: 작성자 ID (필수) (str) (Header)
     """
     
     query = "SELECT * FROM ox WHERE author = %s AND id = %s"
     params = (user_id, postID)   
     count = await database.execute_query(query, params)
     
-    if count == 0:  
+    if len(count) == 0:  
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="해당 글에 수정 권한이 없거나 존재하지 않습니다."
+            detail="해당 글에 삭제 권한이 없거나 존재하지 않습니다."
         )
     
     query = "DELETE FROM ox WHERE id = %s AND author = %s"
