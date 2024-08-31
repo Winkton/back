@@ -15,12 +15,9 @@ router = APIRouter(
 class User(BaseModel):
     userId: str
     password: str
-    
-class UserListResponse(BaseModel):
-    result: List[User]
-    
+
 @router.post("/login")
-async def get_users(user: User, response_model = UserListResponse):
+async def get_users(user: User):
 
     '''  
     ID와 password를 받아서 DB에 전달하는 엔드포인트입니다.
@@ -60,7 +57,7 @@ async def get_users(user: User, response_model = UserListResponse):
         )
 
     
-    return {"user": result}
+    return {"Message": "Login Successful"}
     
 
 
@@ -71,11 +68,7 @@ class User(BaseModel):
     username: str
     country: str
 
-class UserListResponse(BaseModel):
-    result: List[User]
-
-
-@router.post("/signup", summary="회원가입", response_model = UserListResponse)
+@router.post("/signup", summary="회원가입", response_model = User)
 async def insert_item(user: User):
     """
     데이터를 'user' 테이블에 삽입하는 엔드포인트입니다.
@@ -126,5 +119,9 @@ async def insert_item(user: User):
             detail="예상치 못한 오류가 발생했습니다."
         )
     
-    
-    return {"message": "Data inserted successfully"}
+    return {
+        "userId": user.userId,
+        "password": user.password,
+        "username": user.username,
+        "country": user.country
+    }
