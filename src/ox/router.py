@@ -75,15 +75,21 @@ async def get_list(userId: Optional[str] = None):
     return {"result": formatted_result}
     
 @router.get("/following", summary="팔로잉한 사람들의 OX 퀴즈 목록 받아오기", response_model=OXListResponse)
-async def get_list():
+async def get_list(user_id: str = Header()):
     """
     OX 퀴즈 목록을 받아오는 EndPoint입니다.
     
     - **userId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
     """
     
-    query = "SELECT * FROM ox"
-    params = []
+    query = """
+    SELECT * 
+    FROM ox o
+    JOIN following f ON f.follower = o.author
+    WHERE f.following = %s;
+    """
+    
+    params = [user_id]
             
     result = await database.execute_query(query, tuple(params)) 
     
