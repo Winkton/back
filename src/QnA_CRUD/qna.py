@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 router = APIRouter(
-    tags=["test"],
+    tags=["qna"],
     responses={404: {"description" : "Not Found"}},
 )
 
@@ -144,6 +144,7 @@ async def delete_item(postID: int, user_id: str = Header()):
     'qa' 테이블의 데이터를 id를 통해 조회해서 삭제하는 엔드포인트입니다.
     
     - **postID**: 게시글 id (parameter)
+
     - **user_id**: 현재 접속중인 유저 이름 (parameter)
     """
     

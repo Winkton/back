@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 
 router = APIRouter(
-    tags=["test"],
+    tags=["login"],
     responses={404: {"description" : "Not Found"}},
 )
 
