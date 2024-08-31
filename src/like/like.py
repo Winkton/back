@@ -9,14 +9,10 @@ router = APIRouter(
 )
 
 class like(BaseModel):
-    id: int
     postID: int
 
-class likeListResponse(BaseModel):
-    result: List[like]
-
-@router.post("/like", summary="좋아요 테이블 조회")
-async def insert_item(item: like, user_id: str = Header(), response_model = likeListResponse):
+@router.post("/like", summary="좋아요 테이블 조회 및 좋아요 수 증가")
+async def insert_item(item: like, user_id: str = Header()):
     """
     글의 좋아요 여부와 누른 사람들을 담은 엔드포인트입니다.
     
@@ -34,20 +30,29 @@ async def insert_item(item: like, user_id: str = Header(), response_model = like
         )
     
     try:
-        query = "SELECT user_id, post_id FROM like WHERE user_id = %s AND post_id = %s"
+        query = "SELECT user_id, post_id FROM `like` WHERE user_id = %s AND post_id = %s"
         params = (user_id, item.postID)
         # 쿼리 실행
         result = await database.execute_query(query, params)
 
         if len(result) == 0:
-            query = "INSERT INTO like (user_id, post_id) VALUES (%s, %s)"
+            query = "INSERT INTO `like` (user_id, post_id) VALUES (%s, %s)"
             params = (user_id, item.postID)
-            
+
+        else:
+            query = "DELETE FROM `like` WHERE user_id = %s"
+            params = (user_id)
+
     except Exception as e:
         print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="예상치 못한 오류가 발생했습니다."
         )
-    
+    print("데이터 조회 완료")
+
+
+    print("좋아요 수 증가")
+
+
     return {"message": "Data searched successfully"}
