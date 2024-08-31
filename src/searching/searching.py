@@ -8,7 +8,7 @@ router = APIRouter(
     responses={404: {"description" : "Not Found"}},
 )
 
-@router.post("", summary="유저 검색 시 팔로우 여부")
+@router.get("", summary="유저 검색 시 팔로우 여부")
 async def user_search(user_id: str = Header()):
     """
     유저의 팔로우 여부를 검색 시에 보여주는 엔드포인트입니다.
@@ -24,17 +24,6 @@ async def user_search(user_id: str = Header()):
         )
     
     try:
-        # query = """
-        #         SELECT u.id, u.name
-        #         FROM following f
-        #         JOIN user u ON f.follower = u.id
-        #         WHERE f.following = %s  
-        #         """
-        # params = (user_id)
-        # # 쿼리 실행
-        # result = await database.execute_query(query, params)
-        # print(result)
-
         query = """
                 SELECT 
                     u.id, 
@@ -58,23 +47,6 @@ async def user_search(user_id: str = Header()):
         # 쿼리 결과 출력 또는 반환
         response = [{"id": row["id"], "name": row["name"], "followed": bool(row["followed"])} for row in result]
         return {"userList": response}
-
-
-
-
-
-
-        query = "SELECT * FROM user"
-        results = await database.execute_query(query)
-        response = list()
-        for row in results:
-            for row2 in result:
-                if row['id'] == row2['id']:
-                    response.append({"info":row, "followed":True})
-                else:
-                    response.append({"info":row, "followed":False})
-        return {"userList":response}
-
     except Exception as e:
         print(e)
         raise HTTPException(

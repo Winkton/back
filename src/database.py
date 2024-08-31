@@ -30,7 +30,8 @@ class Database:
             user=DB_USER,
             password=DB_PASSWORD,
             db=DB_NAME,
-            autocommit=True
+            autocommit=True,
+            charset='utf8mb4'
         )
         logging.info("DB 연결 완료")
 
