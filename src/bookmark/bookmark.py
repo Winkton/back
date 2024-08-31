@@ -90,6 +90,16 @@ async def search_item(targetUserId: str, user_id: str = Header()):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="유저 이름은 1글자 이상 25글자 이하여야 합니다."
         )
+        
+    query = "SELECT * FROM user WHERE id = %s"
+    params = (targetUserId)   
+    count = await database.execute_query(query, params)
+    
+    if len(count) == 0:  
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="존재하지 않는 유저입니다"
+        )
     
     try:
         query = """
