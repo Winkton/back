@@ -9,14 +9,10 @@ router = APIRouter(
 )
 
 class like(BaseModel):
-    id: int
     postID: int
 
-class likeListResponse(BaseModel):
-    result: List[like]
-
-@router.post("/like", summary="좋아요 테이블 조회")
-async def insert_item(item: like, user_id: str = Header(), response_model = likeListResponse):
+@router.post("/like", summary="좋아요 테이블 조회 및 좋아요 수 증가")
+async def insert_item(item: like, user_id: str = Header()):
     """
     글의 좋아요 여부와 누른 사람들을 담은 엔드포인트입니다.
     
@@ -27,21 +23,36 @@ async def insert_item(item: like, user_id: str = Header(), response_model = like
     - **user_id**: 현재 접속중인 유저 이름 (parameter)
     """
     print("데이터 조회 시작")
-    #if len(user_id)
-    query = "SELECT user_id, post_id FROM like WHERE user_id = %s AND post_id = %s"
-    params = (user_id, item.postID)
+    if len(user_id)<=0 or len(user_id)>25:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="유저 이름은 1글자 이상 25글자 이하여야 합니다."
+        )
+    
+    try:
+        query = "SELECT user_id, post_id FROM `like` WHERE user_id = %s AND post_id = %s"
+        params = (user_id, item.postID)
+        # 쿼리 실행
+        result = await database.execute_query(query, params)
 
-    # dd 필드가 있는지 여부에 따라 다른 INSERT 쿼리를 생성
-    if item.dd is not None:
-        # dd 필드가 있는 경우
-        query = "INSERT INTO test (name, dd, ff) VALUES (%s, %s, %s)"
-        params = (item.name, item.dd, item.ff)
-    else:
-        # dd 필드가 없는 경우
-        query = "INSERT INTO test (name, ff) VALUES (%s, %s)"
-        params = (item.name, item.ff)
-    
-    # 쿼리 실행
-    await database.execute_query(query, params)
-    
-    return {"message": "Data inserted successfully"}
+        if len(result) == 0:
+            query = "INSERT INTO `like` (user_id, post_id) VALUES (%s, %s)"
+            params = (user_id, item.postID)
+
+        else:
+            query = "DELETE FROM `like` WHERE user_id = %s"
+            params = (user_id)
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="예상치 못한 오류가 발생했습니다."
+        )
+    print("데이터 조회 완료")
+
+
+    print("좋아요 수 증가")
+
+
+    return {"message": "Data searched successfully"}
