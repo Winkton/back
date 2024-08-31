@@ -4,13 +4,15 @@ import uvicorn
 from contextlib import asynccontextmanager
 from database import database
 from example import router as test_router
-from Login import login
-from Signup import signup
 from QnA_CRUD import qna
-
 from ox import router as ox_router
+<<<<<<< HEAD
 from following import router as following_router
 
+=======
+from like import like
+from Auth import login
+>>>>>>> 6e62baefeca2e43d859fb535157dd67c6e97a179
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,11 +33,14 @@ app.add_middleware(
 )
 
 app.include_router(test_router.router, prefix="/api/test")
-app.include_router(login.router, prefix="/api/login")
-app.include_router(signup.router, prefix="/api/signup")
+app.include_router(login.router, prefix="/api/auth")
 app.include_router(qna.router, prefix="/api/qna")
 app.include_router(ox_router.router, prefix="/api/ox")
+<<<<<<< HEAD
 app.include_router(following_router.router, prefix="/api/follow")
+=======
+app.include_router(like.router, prefix="/api/like")
+>>>>>>> 6e62baefeca2e43d859fb535157dd67c6e97a179
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
