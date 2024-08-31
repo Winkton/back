@@ -115,7 +115,7 @@ async def follow_user(follow_user: str, user_id: str = Header()):
         )
         
 @router.delete("/{follow_user}", summary="팔로우 취소", response_model= SuccessResponse)
-async def delete(postID: int, user_id: str = Header()):
+async def delete(follow_user: str, user_id: str = Header()):
     """
     특정 유저를 팔로잉을 취소합니다.
     
@@ -123,18 +123,18 @@ async def delete(postID: int, user_id: str = Header()):
     - **follow_user**: 팔로잉할 유저 ID (필수) (str) (Parameter)
     """
     
-    query = "SELECT * FROM ox WHERE follower = %s"
-    params = (user_id, postID)   
+    query = "SELECT * FROM following WHERE follower = %s AND following = %s"
+    params = (follow_user, user_id)   
     count = await database.execute_query(query, params)
     
     if len(count) == 0:  
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="해당 글에 삭제 권한이 없거나 존재하지 않습니다."
+            detail="해당 유저가 존재하지 않습니다."
         )
     
-    query = "DELETE FROM ox WHERE id = %s AND author = %s"
-    params = (postID, user_id)
+    query = "DELETE FROM following WHERE follower = %s AND following = %s"
+    params = (follow_user, user_id)
     
     # 쿼리 실행
     await database.execute_query(query, params)
