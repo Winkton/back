@@ -103,52 +103,20 @@ async def follow_user(follow_user: str, userId: str = Header()):
     params = (userId, follow_user)   
     count = await database.execute_query(query, params)
 
-    if len(count) != 0:  
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="이미 팔로우 중입니다"
-        )
-    
-    try:
+    if len(count) == 0:  
         query = "INSERT INTO following (following, follower) VALUES (%s, %s)"
         params = (userId, follow_user)
         
         await database.execute_query(query, params)
         
         return {"message": "Successfully Followed"}
+    else:
+        query = "DELETE FROM following WHERE follower = %s AND following = %s"
+        params = (follow_user, userId)
     
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="예상치 못한 오류가 발생했습니다."
-        )
+        await database.execute_query(query, params)
         
-@router.delete("/{follow_user}", summary="팔로우 취소", response_model= SuccessResponse)
-async def delete(follow_user: str, userId: str = Header()):
-    """
-    특정 유저를 팔로잉을 취소합니다.
-    
-    - **userId**: 작성자 ID (필수) (str) (Header)
-    - **follow_user**: 팔로잉할 유저 ID (필수) (str) (Parameter)
-    """
-    
-    query = "SELECT * FROM following WHERE follower = %s AND following = %s"
-    params = (follow_user, userId)   
-    count = await database.execute_query(query, params)
-    
-    if len(count) == 0:  
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="해당 유저가 존재하지 않습니다."
-        )
-    
-    query = "DELETE FROM following WHERE follower = %s AND following = %s"
-    params = (follow_user, userId)
-    
-    # 쿼리 실행
-    await database.execute_query(query, params)
-    
-    return {"message": "Data deleted successfully"}
+        return {"message": "Successfully UnFollowed"}
     
     
     
