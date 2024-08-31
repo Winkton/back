@@ -55,7 +55,7 @@ async def insert_item(userId: str):
 
 
 @router.put("/{username}&{country}", summary="유저의 프로필 업데이트")
-async def insert_item(username: str, country: str, current_user_id: str = Header()):
+async def insert_item(username: str, country: str, userId: str = Header()):
     """
     본인의 경우, ID를 제외한 이름과 국가의 변경을 위한 엔드포인트입니다.
     
@@ -63,10 +63,10 @@ async def insert_item(username: str, country: str, current_user_id: str = Header
     
     - **country**: 유저의 바꿀 국가
     
-    - **currnent_user_id**: 현재 접속중인 유저 이름 (parameter)
+    - **userId**: 현재 접속중인 유저 이름 (parameter)
     """
     
-    if len(current_user_id)<=0 or len(current_user_id)>25:
+    if len(userId)<=0 or len(userId)>25:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="유저 ID는 1글자 이상 30글자 이하여야 합니다."
@@ -74,7 +74,7 @@ async def insert_item(username: str, country: str, current_user_id: str = Header
     
     try:
         query = "UPDATE user SET name = %s, country = %s WHERE id = %s"
-        params = (username, country, current_user_id)
+        params = (username, country, userId)
         # 쿼리 실행
         result = await database.execute_query(query, params)
         return {"Message": "Updated Successful"}

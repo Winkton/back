@@ -60,12 +60,12 @@ class OXListResponse(BaseModel):
     result: List[OXItem] = Field(..., description="OX 퀴즈 항목의 목록")
 
 @router.get("", summary="OX 퀴즈 목록 받아오기", response_model=OXListResponse)
-async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
+async def get_list(targetUserId: Optional[str] = None, userId: str = Header()):
     """
     OX 퀴즈 목록을 받아오는 EndPoint입니다.
     
     - **targetUserId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
-    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
     
     query = """
@@ -89,7 +89,7 @@ async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
         GROUP BY post_id
     ) AS like_count_table ON o.id = like_count_table.post_id 
     """
-    params = [user_id, user_id]
+    params = [userId, userId]
     
     if targetUserId:
         query += " WHERE o.author = %s"
@@ -102,11 +102,11 @@ async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
     return {"result": formatted_result}
     
 @router.get("/following", summary="팔로잉한 사람들의 OX 퀴즈 목록 받아오기", response_model=OXListResponse)
-async def get_list(user_id: str = Header()):
+async def get_list(userId: str = Header()):
     """
     OX 퀴즈 목록을 받아오는 EndPoint입니다.
     
-    - **user_id**: 로그인한 유저 ID (필수) (str) (Header)
+    - **userId**: 로그인한 유저 ID (필수) (str) (Header)
     """
     
     query = """
@@ -133,7 +133,7 @@ async def get_list(user_id: str = Header()):
     WHERE f.following = %s;  
     """
 
-    params = [user_id, user_id, user_id]
+    params = [userId,userId, userId]
             
     result = await database.execute_query(query, tuple(params)) 
     
@@ -145,11 +145,11 @@ class OX(BaseModel):
     content: str  
 
 @router.post("", summary="OX 퀴즈 업로드", response_model= SuccessResponse)
-async def getList(ox: OX, user_id: str = Header()):
+async def getList(ox: OX, userId: str = Header()):
     """
     OX 퀴즈를 업로드하는 EndPoint입니다.
     
-    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
     - **content**: 질문할 문제 (필수) (str 100자 이하)
     """
     
@@ -159,7 +159,7 @@ async def getList(ox: OX, user_id: str = Header()):
             detail="질문 길이는 반드시 1자 이상 100이하여야 됩니다."
         )
         
-    if len(user_id) == 0:
+    if len(userId) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="작성자는 필수입니다."
@@ -167,7 +167,7 @@ async def getList(ox: OX, user_id: str = Header()):
         
     try:
         query = "INSERT INTO ox (author, content) VALUES (%s, %s)"
-        params = (user_id, ox.content)
+        params = (userId, ox.content)
         
         await database.execute_query(query, params)
         
@@ -183,11 +183,11 @@ class OXModify(BaseModel):
     content: str
 
 @router.put("/{postID}", summary="OX 퀴즈 수정", response_model= SuccessResponse)
-async def modify(postID: int, ox: OXModify, user_id: str = Header()):
+async def modify(postID: int, ox: OXModify, userId: str = Header()):
     """
     OX 퀴즈를 수정하는 EndPoint입니다.
     
-    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
     - **postID**: 글 ID (필수) (int) (Parameter)
     - **content**: 질문할 문제 (필수) (str 100자 이하)
     """
@@ -198,14 +198,14 @@ async def modify(postID: int, ox: OXModify, user_id: str = Header()):
             detail="질문 길이는 반드시 1자 이상 100이하여야 됩니다."
         )
         
-    if len(user_id) == 0:
+    if len(userId) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="작성자는 필수입니다."
         )
         
     query = "SELECT * FROM ox WHERE author = %s AND id = %s"
-    params = (user_id, postID)   
+    params = (userId, postID)   
     count = await database.execute_query(query, params)
 
     if len(count) == 0:  
@@ -216,7 +216,7 @@ async def modify(postID: int, ox: OXModify, user_id: str = Header()):
         
     try:
         query = "UPDATE ox SET content = %s WHERE author = %s AND id = %s"
-        params = (ox.content, user_id, postID)        
+        params = (ox.content, userId, postID)        
         affected_rows = await database.execute_query(query, params)
                 
     except Exception as e:
@@ -235,16 +235,16 @@ async def modify(postID: int, ox: OXModify, user_id: str = Header()):
     return {"message": "Successfully Modified"}
 
 @router.delete("/{postID}", summary="OX 퀴즈 수정", response_model= SuccessResponse)
-async def delete(postID: int, user_id: str = Header()):
+async def delete(postID: int, userId: str = Header()):
     """
     'ox' 테이블의 데이터를 id를 통해 조회해서 삭제하는 엔드포인트입니다.
     
     - **postID**: 게시글 id (int)
-    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
     
     query = "SELECT * FROM ox WHERE author = %s AND id = %s"
-    params = (user_id, postID)   
+    params = (userId, postID)   
     count = await database.execute_query(query, params)
     
     if len(count) == 0:  
@@ -254,7 +254,7 @@ async def delete(postID: int, user_id: str = Header()):
         )
     
     query = "DELETE FROM ox WHERE id = %s AND author = %s"
-    params = (postID, user_id)
+    params = (postID, userId)
     
     # 쿼리 실행
     await database.execute_query(query, params)
@@ -265,11 +265,11 @@ class OXVote(BaseModel):
     vote: bool
 
 @router.post("/vote/{postId}", summary="OX 퀴즈 투표", response_model= SuccessResponse)
-async def getList(postId: int, vote: OXVote, user_id: str = Header()):
+async def getList(postId: int, vote: OXVote, userId: str = Header()):
     """
     OX 퀴즈에 투표하는 EndPoint입니다.
     
-    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
     - **postId**: 투표할 퀴즈의 ID (필수) (int) (Parameter)
     - **vote**: 사용자가 선택한 투표 (True: 'O', False: 'X')
     """
@@ -285,12 +285,12 @@ async def getList(postId: int, vote: OXVote, user_id: str = Header()):
         )
         
     query = "SELECT * FROM `ox_check` WHERE post_id = %s AND user_id = %s"
-    params = (postId, user_id)
+    params = (postId, userId)
     result = await database.execute_query(query, params)
     
     if len(result) == 0:
         query = "INSERT INTO ox_check (user_id, post_id, vote) VALUES (%s, %s, %s)"
-        params = (user_id, postId, vote.vote)
+        params = (userId, postId, vote.vote)
         result = await database.execute_query(query, params)
         
         if vote.vote:  
@@ -310,7 +310,7 @@ async def getList(postId: int, vote: OXVote, user_id: str = Header()):
         await database.execute_query(update_query, (postId,))
             
         query = "DELETE FROM ox_check WHERE user_id = %s AND post_id = %s"
-        params = (user_id, postId)
+        params = (userId, postId)
         result = await database.execute_query(query, params)
         
         return {"message": "Voted Canceled successfully"}
