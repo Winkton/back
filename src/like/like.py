@@ -11,7 +11,7 @@ router = APIRouter(
 class like(BaseModel):
     postID: int
 
-@router.post("/like", summary="좋아요 테이블 조회 및 좋아요 수 증가")
+@router.post("", summary="좋아요 테이블 조회 및 좋아요 수 증가")
 async def insert_item(item: like, user_id: str = Header()):
     """
     글의 좋아요 여부와 누른 사람들을 담은 엔드포인트입니다.

@@ -43,6 +43,8 @@ async def get_users(user: User):
         query = 'SELECT * FROM user WHERE id=%s AND password=%s'
         params = [user.userId, user.password]
         result = await database.execute_query(query, tuple(params))
+        print(result)
+        formatted_result = [{"userId": row['id'], "username":row['name'], "country":row['country'], "password":row['password']} for row in result]
         if len(result) == 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -57,7 +59,11 @@ async def get_users(user: User):
         )
 
     
-    return {"Message": "Login Successful"}
+    return {
+        "userId": formatted_result[0]['userId'],
+        "username": formatted_result[0]['username'],
+        "country": formatted_result[0]['country']
+        }
     
 
 
