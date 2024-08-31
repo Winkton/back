@@ -10,6 +10,8 @@ from following import router as following_router
 from bookmark import bookmark
 from like import like
 from Auth import login
+from searching import searching
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,6 +38,8 @@ app.include_router(ox_router.router, prefix="/api/ox")
 app.include_router(following_router.router, prefix="/api/follow")
 app.include_router(like.router, prefix="/api/like")
 app.include_router(bookmark.router, prefix="/api/bookmark")
+app.include_router(searching.router, prefix="/api/search")
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -38,24 +38,15 @@ async def get_users(user: User):
             detail="비밀번호는 1글자 이상 25글자 이하여야 합니다."
         )
     
-
-    try:
-        query = 'SELECT * FROM user WHERE id=%s AND password=%s'
-        params = [user.userId, user.password]
-        result = await database.execute_query(query, tuple(params))
-        print(result)
-        formatted_result = [{"userId": row['id'], "username":row['name'], "country":row['country'], "password":row['password']} for row in result]
-        if len(result) == 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="ID 또는 비밀번호가 틀립니다."
-            )
-                
-    except Exception as e:
-        print(e)
+    query = 'SELECT * FROM user WHERE id=%s AND password=%s'
+    params = [user.userId, user.password]
+    result = await database.execute_query(query, tuple(params))
+    print(result)
+    formatted_result = [{"userId": row['id'], "username":row['name'], "country":row['country'], "password":row['password']} for row in result]
+    if len(result) == 0:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="예상치 못한 오류가 발생했습니다."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ID 또는 비밀번호가 틀립니다."
         )
 
     
