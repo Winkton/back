@@ -7,7 +7,7 @@ from example import router as test_router
 from QnA_CRUD import qna
 from ox import router as ox_router
 from following import router as following_router
-
+from bookmark import bookmark
 from like import like
 from Auth import login
 
@@ -35,6 +35,7 @@ app.include_router(qna.router, prefix="/api/qna")
 app.include_router(ox_router.router, prefix="/api/ox")
 app.include_router(following_router.router, prefix="/api/follow")
 app.include_router(like.router, prefix="/api/like")
+app.include_router(bookmark.router, prefix="/api/bookmark")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
