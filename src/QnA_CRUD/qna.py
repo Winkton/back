@@ -56,6 +56,7 @@ class qa(BaseModel):
     content: str
     author: str
     created_at: datetime
+    postType: str
     liked: bool
     likeCount: int
 
@@ -97,7 +98,7 @@ async def read_item(userId: Optional[str] = None, user_id: str = Header()):
         
         # 쿼리 실행
         result = await database.execute_query(query, params)
-        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
                 
     except Exception as e:
         print(e)
@@ -143,7 +144,7 @@ async def read_item(user_id: str = Header()):
         params = [user_id, user_id]
         
         result = await database.execute_query(query, tuple(params)) 
-        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
                 
     except Exception as e:
         print(e)

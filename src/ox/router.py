@@ -49,6 +49,7 @@ class OXItem(BaseModel):
     question: str
     answer: bool
     author: str
+    postType: str
     created_at: datetime
     liked: bool
     likeCount: int
@@ -92,7 +93,7 @@ async def get_list(userId: Optional[str] = None, user_id: str = Header()):
     
     result = await database.execute_query(query, tuple(params))
     
-    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
     
     return {"result": formatted_result}
     
@@ -129,7 +130,7 @@ async def get_list(user_id: str = Header()):
             
     result = await database.execute_query(query, tuple(params)) 
     
-    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
