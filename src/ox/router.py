@@ -74,6 +74,23 @@ async def get_list(userId: Optional[str] = None):
     
     return {"result": formatted_result}
     
+@router.get("/following", summary="팔로잉한 사람들의 OX 퀴즈 목록 받아오기", response_model=OXListResponse)
+async def get_list():
+    """
+    OX 퀴즈 목록을 받아오는 EndPoint입니다.
+    
+    - **userId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
+    """
+    
+    query = "SELECT * FROM ox"
+    params = []
+            
+    result = await database.execute_query(query, tuple(params)) 
+    
+    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "created_at": row["created_at"]} for row in result]  
+    
+    return {"result": formatted_result}
+    
 class OX(BaseModel):
     question: str
     answer: bool    
