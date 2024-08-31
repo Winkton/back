@@ -38,25 +38,31 @@ async def user_search(userId: str = Header()):
         query = """
                 SELECT 
                     u.id, 
-                    u.name, 
+                    u.name,
+                    COALESCE(sub_f.follower_count, 0) AS follower_count, 
                     CASE 
-                        WHEN f.follower IS NOT NULL THEN TRUE 
+                        WHEN f2.follower IS NOT NULL THEN TRUE 
                         ELSE FALSE 
                     END AS followed
                 FROM user u
-                LEFT JOIN following f 
-                    ON u.id = f.follower 
-                    AND f.following = %s -- 특정 사용자가 팔로우하는지 확인할 사용자 ID
+                LEFT JOIN (
+                    SELECT follower, COUNT(*) AS follower_count 
+                    FROM following
+                    GROUP BY follower
+                ) sub_f ON u.id = sub_f.follower 
+                LEFT JOIN following f2 
+                    ON u.id = f2.follower 
+                    AND f2.following = %s
+                WHERE u.id != %s
                 """
                 
-        
-        params = (userId,)  # 특정 사용자를 팔로우하는지 확인할 사용자 ID
+        params = (userId, userId)  # 특정 사용자를 팔로우하는지 확인할 사용자 ID
 
         # 쿼리 실행
         result = await database.execute_query(query, params)
 
         # 쿼리 결과 출력 또는 반환
-        response = [{"id": row["id"], "name": row["name"], "followed": bool(row["followed"])} for row in result]
+        response = [{"id": row["id"], "name": row["name"], "followed": bool(row["followed"]), "followerCount": row["follower_count"]} for row in result]
         return {"userList": response}
 
 
