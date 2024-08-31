@@ -56,30 +56,48 @@ class qa(BaseModel):
     content: str
     author: str
     created_at: datetime
+    liked: bool
+    likeCount: int
 
 class qaListResponse(BaseModel):
     result: List[qa]
 
 @router.get("", summary="Qna 글 불러오기", response_model=qaListResponse)
-async def read_item():
+async def read_item(userId: Optional[str] = None, user_id: str = Header()):
     """
     데이터를 'qa' 테이블에서 불러오는 엔드포인트입니다.
-    - **id**: 게시글 ID
-
-    - **Content**: 게시글 내용
-
-    - **Author**: 작성자 이름
-
-    - **created_at**: 게시글 생성일
+    
+    - **userId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
+    - **user_id**: 로그인한 유저 ID (필수) (str) (Header)
     """
-    print("데이터 불러오기")
-
 
     try:
-        query = "SELECT * FROM qa"
+        query = """
+        SELECT
+            q.id, 
+            q.content, 
+            q.author, 
+            q.created_at,
+            CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,  
+            COALESCE(like_count_table.like_count, 0) AS like_count 
+        FROM qa q
+        LEFT JOIN `like` l ON q.id = l.post_id AND l.user_id = %s AND post_type = 'qa'
+        LEFT JOIN (
+            SELECT post_id, COUNT(*) AS like_count 
+            FROM `like`
+            WHERE post_type = 'qa'
+            GROUP BY post_id
+        ) AS like_count_table ON q.id = like_count_table.post_id 
+        """
+        params = [user_id]
+        
+        if userId:
+            query += " WHERE o.author = %s"
+            params.append(userId)
+        
         # 쿼리 실행
-        result = await database.execute_query(query)
-        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "created_at":row['created_at']} for row in result]
+        result = await database.execute_query(query, params)
+        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
                 
     except Exception as e:
         print(e)
@@ -89,12 +107,7 @@ async def read_item():
         )
     
     return {
-
-        "id": formatted_result["id"],
-        "content": formatted_result["content"],
-        "author": formatted_result["author"],
-        "created_at": formatted_result["created_at"]
-
+        "result": formatted_result
     }
     
 @router.get("/following", summary="Qna 글 불러오기", response_model=qaListResponse)
@@ -103,20 +116,34 @@ async def read_item(user_id: str = Header()):
     팔로잉한 사람들의 Q&A 목록을 받아오는 EndPoint입니다.
     
     - **userId**: 작성자 ID (필수) (str)
+    - **user_id**: 로그인한 유저 ID (필수) (str) (Header)
     """
     
     try:
         query = """
-        SELECT * 
+        SELECT
+            q.id, 
+            q.content, 
+            q.author, 
+            q.created_at,
+            CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,  
+            COALESCE(like_count_table.like_count, 0) AS like_count 
         FROM qa q
         JOIN following f ON f.follower = q.author
+        LEFT JOIN `like` l ON q.id = l.post_id AND l.user_id = %s AND post_type = 'qa'
+        LEFT JOIN (
+            SELECT post_id, COUNT(*) AS like_count 
+            FROM `like`
+            WHERE post_type = 'qa'
+            GROUP BY post_id
+        ) AS like_count_table ON q.id = like_count_table.post_id 
         WHERE f.following = %s;
         """
         
-        params = [user_id]
+        params = [user_id, user_id]
         
         result = await database.execute_query(query, tuple(params)) 
-        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "created_at":row['created_at']} for row in result]
+        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
                 
     except Exception as e:
         print(e)

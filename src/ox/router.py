@@ -48,6 +48,7 @@ class OXItem(BaseModel):
     id: int
     question: str
     answer: bool
+    author: str
     created_at: datetime
     liked: bool
     likeCount: int
@@ -62,21 +63,24 @@ async def get_list(userId: Optional[str] = None, user_id: str = Header()):
     OX 퀴즈 목록을 받아오는 EndPoint입니다.
     
     - **userId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
+    - **user_id**: 로그인한 유저 ID (필수) (str) (Header)
     """
     
     query = """
     SELECT 
         o.id, 
         o.question, 
-        o.answer, 
+        o.answer,
+        o.author,
         o.created_at,
         CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,
         COALESCE(like_count_table.like_count, 0) AS like_count 
     FROM ox o
-    LEFT JOIN `like` l ON o.id = l.post_id AND l.user_id = %s
+    LEFT JOIN `like` l ON o.id = l.post_id AND l.user_id = %s AND post_type = 'ox'
     LEFT JOIN (
         SELECT post_id, COUNT(*) AS like_count 
         FROM `like`
+        WHERE post_type = 'ox'
         GROUP BY post_id
     ) AS like_count_table ON o.id = like_count_table.post_id 
     """
@@ -88,7 +92,7 @@ async def get_list(userId: Optional[str] = None, user_id: str = Header()):
     
     result = await database.execute_query(query, tuple(params))
     
-    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "created_at": row["created_at"], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
     
     return {"result": formatted_result}
     
@@ -97,23 +101,25 @@ async def get_list(user_id: str = Header()):
     """
     OX 퀴즈 목록을 받아오는 EndPoint입니다.
     
-    - **userId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
+    - **user_id**: 로그인한 유저 ID (필수) (str) (Header)
     """
     
     query = """
     SELECT 
         o.id, 
         o.question, 
-        o.answer, 
+        o.answer,
+        o.author,
         o.created_at,
         CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,  
         COALESCE(like_count_table.like_count, 0) AS like_count 
     FROM ox o
     JOIN following f ON f.follower = o.author  
-    LEFT JOIN `like` l ON o.id = l.post_id AND l.user_id = %s  
+    LEFT JOIN `like` l ON o.id = l.post_id AND l.user_id = %s AND post_type = 'ox'
     LEFT JOIN (
         SELECT post_id, COUNT(*) AS like_count 
         FROM `like`
+        WHERE post_type = 'ox'
         GROUP BY post_id
     ) AS like_count_table ON o.id = like_count_table.post_id 
     WHERE f.following = %s;  
@@ -123,7 +129,7 @@ async def get_list(user_id: str = Header()):
             
     result = await database.execute_query(query, tuple(params)) 
     
-    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "created_at": row["created_at"], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
