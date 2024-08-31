@@ -96,7 +96,7 @@ async def read_item(targetUserId: Optional[str] = None, userId: str = Header()):
         
         # 쿼리 실행
         result = await database.execute_query(query, params)
-        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": bool(row["liked"]), "likeCount": row["like_count"]} for row in result]
                 
     except Exception as e:
         print(e)
@@ -141,7 +141,7 @@ async def read_item(userId: str = Header()):
         params = [userId, userId]
         
         result = await database.execute_query(query, tuple(params)) 
-        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": bool(row["liked"]), "likeCount": row["like_count"]} for row in result]
                 
     except Exception as e:
         print(e)
@@ -269,7 +269,7 @@ async def get_qna_detail(postID: str, userId: str = Header()):
     params = [userId, postID]
 
     result = await database.execute_query(query, params)
-    formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+    formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": bool(row["liked"]), "likeCount": row["like_count"]} for row in result]
     
     query = """
     SELECT 

@@ -130,7 +130,7 @@ async def search_item(targetUserId: str, userId: str = Header()):
         params = (userId, userId, targetUserId)
         # 쿼리 실행
         result = await database.execute_query(query, params)
-        ox = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+        ox = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": bool(row["voted"]), "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": bool(row["liked"]), "likeCount": row["like_count"]} for row in result]  
     
         query = """
         SELECT 
@@ -154,7 +154,7 @@ async def search_item(targetUserId: str, userId: str = Header()):
         params = (userId, targetUserId)
         # 쿼리 실행
         result2 = await database.execute_query(query, params)
-        qa = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result2]
+        qa = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": bool(row["liked"]), "likeCount": row["like_count"]} for row in result2]
                 
         if len(result) == 0 and len(result2):
             return {"message": "There's no Bookmarked contents"}
