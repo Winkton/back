@@ -15,8 +15,6 @@ class bookmark(BaseModel):
 async def insert_item(item: bookmark, user_id: str = Header()):
     """
     글의 좋아요 여부와 누른 사람들을 담은 엔드포인트입니다.
-    
-    - **id**: auto Increment ID
    
     - **post_id**: 글 ID
 
@@ -52,19 +50,11 @@ async def insert_item(item: bookmark, user_id: str = Header()):
             detail="예상치 못한 오류가 발생했습니다."
         )
 
-
-    
-
-
-
-
 @router.get("/{userId}", summary="리포스트(북마크) 조회하기")
 async def search_item(userId: str):
     """
     북마크에 담은 포스트들을 조회하는 엔드포인트입니다.
     
-    - **id**: auto Increment ID
-   
     - **post_id**: 글 ID
 
     - **user_id**: 현재 접속중인 유저 이름 (parameter)
