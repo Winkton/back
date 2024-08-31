@@ -125,3 +125,81 @@ async def insert_item(user: User):
         "username": user.username,
         "country": user.country
     }
+
+class User(BaseModel):
+    userId: str
+
+@router.post("/searchId")
+async def get_users(user: User):
+
+    '''  
+    ID를 받아서 DB에서 조회하는 엔드포인트입니다.
+    
+    - **userId**: 찾을 유저 ID
+    
+    '''
+
+    if len(user.userId)<=0 or len(user.userId)>30:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ID는 1글자 이상 30글자 이하여야 합니다."
+        )    
+
+    try:
+        query = 'SELECT * FROM user WHERE id=%s'
+        params = user.userId
+        result = await database.execute_query(query, params)
+        if len(result) == 0:
+            return {"Message": "요청하신 ID가 없습니다."}
+                
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="예상치 못한 오류가 발생했습니다."
+        )
+
+    
+    return {"userId": user.userId}
+
+
+
+
+
+class User(BaseModel):
+    userId: str
+    password: str
+
+@router.post("/updatePassword")
+async def get_users(user: User):
+
+    '''  
+    ID를 받아서 DB에서 조회하는 엔드포인트입니다.
+    
+    - **userId**: 찾을 유저 ID
+    
+    '''
+
+    if len(user.userId)<=0 or len(user.userId)>30:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ID는 1글자 이상 30글자 이하여야 합니다."
+        )    
+
+    try:
+        query = 'SELECT * FROM user WHERE id=%s'
+        params = user.userId
+        result = await database.execute_query(query, params)
+        print(result)
+        if len(result) == 0:
+            return {"Message": "요청하신 ID가 없습니다."}
+                
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="예상치 못한 오류가 발생했습니다."
+        )
+
+    
+    return {"Message": "요청하신 ID가 존재합니다."}
