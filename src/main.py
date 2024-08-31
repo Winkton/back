@@ -9,6 +9,7 @@ from Signup import signup
 from QnA_CRUD import qna
 
 from ox import router as ox_router
+from following import router as following_router
 
 
 @asynccontextmanager
@@ -34,6 +35,7 @@ app.include_router(login.router, prefix="/api/login")
 app.include_router(signup.router, prefix="/api/signup")
 app.include_router(qna.router, prefix="/api/qna")
 app.include_router(ox_router.router, prefix="/api/ox")
+app.include_router(following_router.router, prefix="/api/follow")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
