@@ -14,13 +14,16 @@ class SuccessResponse(BaseModel):
 class UserFollowingResponse(BaseModel):
     userId: str
     name: str
+    
+class UserFollowingListResponse(BaseModel):
+    result: List[UserFollowingResponse]
 
-@router.get("/following/{userId}", summary="특정 유저가 팔로잉한 목록을 받아옵니다.", response_model=List[UserFollowingResponse])
-async def get_following_user(userId: str):
+@router.get("/following/{targetUserId}", summary="특정 유저가 팔로잉한 목록을 받아옵니다.", response_model=UserFollowingListResponse)
+async def get_following_user(targetUserId: str):
     """
     특정 유저가 팔로잉한 목록을 받아옵니다.
     
-    - **userId**: 유저 ID (필수) (str) (Parameter)
+    - **targetUserId**: 유저 ID (필수) (str) (Parameter)
     """
     
     query = """
@@ -29,12 +32,12 @@ async def get_following_user(userId: str):
     JOIN user u ON f.follower = u.id
     WHERE f.following = %s  
     """
-    params = (userId,) 
+    params = (targetUserId,) 
     
     try:
         result = await database.execute_query(query, params)
         
-        return [{"userId": row['id'], "name": row['name']} for row in result]
+        return { "result" : [{"userId": row['id'], "name": row['name']} for row in result] }
 
     except Exception as e:
         print(e)
@@ -43,12 +46,12 @@ async def get_following_user(userId: str):
             detail="데이터를 가져오는 중 오류가 발생했습니다."
         )
         
-@router.get("/follower/{userId}", summary="특정 유저를 팔로잉한 팔로워들 목록을 받아옵니다.", response_model=List[UserFollowingResponse])
-async def get_following_user(userId: str):
+@router.get("/follower/{targetUserId}", summary="특정 유저를 팔로잉한 팔로워들 목록을 받아옵니다.", response_model=UserFollowingListResponse)
+async def get_following_user(targetUserId: str):
     """
     특정 유저를 팔로잉한 팔로워들 목록을 받아옵니다.
     
-    - **userId**: 유저 ID (필수) (str) (Parameter)
+    - **targetUserId**: 유저 ID (필수) (str) (Parameter)
     """
     
     query = """
@@ -57,12 +60,12 @@ async def get_following_user(userId: str):
     JOIN user u ON f.following = u.id   
     WHERE f.follower = %s  
     """
-    params = (userId,) 
+    params = (targetUserId,) 
     
     try:
         result = await database.execute_query(query, params)
         
-        return [{"userId": row['id'], "name": row['name']} for row in result]
+        return { "result" : [{"userId": row['id'], "name": row['name']} for row in result] }
 
     except Exception as e:
         print(e)
