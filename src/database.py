@@ -5,8 +5,8 @@ from typing import Optional
 import logging
 
 # 환경 변수 로드 및 로깅 설정
-logging.basicConfig(level=logging.INFO)
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
 
 # 환경 변수에서 MySQL 연결 정보 가져오기
 DB_HOST = os.getenv('DB_HOST')
@@ -40,16 +40,15 @@ class Database:
             await self._pool.wait_closed()
             logging.info("DB 연결 해제 완료")
 
-    async def execute_query(self, query: str, params: Optional[tuple] = None) -> list:
-        """쿼리를 실행하고 결과를 반환합니다."""
+    async def execute_query(self, query: str, params: Optional[tuple] = None) -> int:
         if not self._pool:
             raise RuntimeError("Connection pool is not initialized.")
 
         async with self._pool.acquire() as conn:
             async with conn.cursor(aiomysql.DictCursor) as cursor:
                 await cursor.execute(query, params)
-                result = await cursor.fetchall() 
-                return result
+                affected_rows = cursor.rowcount  # 영향받은 행의 수 가져오기
+                return affected_rows
 
 # Database 인스턴스 생성
 database = Database()
