@@ -47,8 +47,8 @@ class Database:
         async with self._pool.acquire() as conn:
             async with conn.cursor(aiomysql.DictCursor) as cursor:
                 await cursor.execute(query, params)
-                affected_rows = cursor.rowcount  # 영향받은 행의 수 가져오기
-                return affected_rows
+                result = await cursor.fetchall() 
+                return result
 
 # Database 인스턴스 생성
 database = Database()
