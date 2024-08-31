@@ -15,7 +15,7 @@ class qa(BaseModel):
 class qaListResponse(BaseModel):
     result: List[qa]
 
-@router.post("/qna", summary="Qna 글 생성", response_model=qaListResponse)
+@router.post("", summary="Qna 글 생성", response_model=qaListResponse)
 async def create_item(text: qa, user_id: str = Header()):
     """
     데이터를 'qa' 테이블에 삽입하는 엔드포인트입니다.
@@ -59,7 +59,7 @@ class qa(BaseModel):
 class qaListResponse(BaseModel):
     result: List[qa]
 
-@router.get("/qna", summary="Qna 글 불러오기", response_model=qaListResponse)
+@router.get("", summary="Qna 글 불러오기", response_model=qaListResponse)
 async def read_item():
     """
     데이터를 'qa' 테이블에서 불러오는 엔드포인트입니다.
@@ -97,7 +97,7 @@ class qa(BaseModel):
 class qaListResponse(BaseModel):
     result: List[qa]
 
-@router.put("/qna/{postID}", summary="Qna 글 업데이트", response_model=qaListResponse)
+@router.put("/{postID}", summary="Qna 글 업데이트", response_model=qaListResponse)
 async def update_item(postID: int, text: qa, user_id: str = Header()):
     """
     'qa' 테이블의 데이터를 id를 통해 불러와서 수정하는 엔드포인트입니다.
@@ -147,7 +147,7 @@ async def update_item(postID: int, text: qa, user_id: str = Header()):
 
 
 
-@router.delete("/qna/{postID}", summary="Qna 글 삭제")
+@router.delete("/{postID}", summary="Qna 글 삭제")
 async def delete_item(postID: int, user_id: str = Header()):
     """
     'qa' 테이블의 데이터를 id를 통해 조회해서 삭제하는 엔드포인트입니다.
