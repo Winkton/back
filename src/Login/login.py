@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from database import database
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 
@@ -16,14 +16,17 @@ class User(BaseModel):
     userId: str
     password: str
     
-
+class UserListResponse(BaseModel):
+    result: List[User]
+    
 @router.post("/login")
-async def get_users(user: User):
+async def get_users(user: User, response_model = UserListResponse):
+    
     '''  
     ID와 password를 받아서 DB에 전달하는 엔드포인트입니다.
     
-    - **userId**: 첫 번째 필터 값 (필수)
-    - **password**: 두 번째 필터 값 (필수)
+    - **userId**: 로그인할 유저 ID
+    - **password**: 로그인할 유저 비밀번호
     
     '''
 

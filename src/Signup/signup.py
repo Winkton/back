@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from database import database
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 router = APIRouter(
@@ -15,9 +15,11 @@ class User(BaseModel):
     name: str
     country: str
 
+class UserListResponse(BaseModel):
+    result: List[User]
 
 
-@router.post("/signup", summary="회원가입")
+@router.post("/signup", summary="회원가입", response_model = UserListResponse)
 async def insert_item(user: User):
     """
     데이터를 'user' 테이블에 삽입하는 엔드포인트입니다.
