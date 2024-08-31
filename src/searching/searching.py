@@ -9,15 +9,15 @@ router = APIRouter(
 )
 
 @router.get("", summary="유저 검색 시 팔로우 여부")
-async def user_search(user_id: str = Header()):
+async def user_search(userId: str = Header()):
     """
     유저의 팔로우 여부를 검색 시에 보여주는 엔드포인트입니다.
 
-    - **user_id**: 현재 접속중인 유저 이름 (parameter)
+    - **userId**: 현재 접속중인 유저 이름 (parameter)
 
     """
     print("데이터 조회 시작")
-    if len(user_id)<=0 or len(user_id)>25:
+    if len(userId)<=0 or len(userId)>25:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="유저 이름은 1글자 이상 25글자 이하여야 합니다."
@@ -39,7 +39,7 @@ async def user_search(user_id: str = Header()):
                 """
                 
         
-        params = (user_id,)  # 특정 사용자를 팔로우하는지 확인할 사용자 ID
+        params = (userId,)  # 특정 사용자를 팔로우하는지 확인할 사용자 ID
 
         # 쿼리 실행
         result = await database.execute_query(query, params)
