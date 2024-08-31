@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status, Header
 from database import database
 from typing import Optional
 from pydantic import BaseModel
@@ -65,11 +65,10 @@ async def read_item():
 
 
 class qa(BaseModel):
-    id: int
     content: str
 
-@router.put("/qna", summary="Qna 글 업데이트")
-async def create_item(text: qa):
+@router.put("/qna/{postID}", summary="Qna 글 업데이트")
+async def create_item(postID: int, text: qa, user_id: str = Header()):
     """
     'qa' 테이블의 데이터를 id를 통해 불러와서 수정하는 엔드포인트입니다.
     
@@ -77,30 +76,50 @@ async def create_item(text: qa):
 
     - **content**: 게시글 내용
     """
+
+    query = "SELECT author FROM qa WHERE id = %s"
+    params = (postID)
+    author = await database.execute_query(query, params)
+    if user_id != author:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="게시물 삭제권한이 없습니다."
+        )
+    
     print("데이터 삽입 시작")
 
     query = "UPDATE qa SET content = %s WHERE id = %s"
-    params = (text.content, text.id)
+    params = (text.content, postID)
     
     # 쿼리 실행
     await database.execute_query(query, params)
     
     return {"message": "Data updated successfully"}
 
-class qa(BaseModel):
-    id: int
 
-@router.delete("/qna", summary="Qna 글 삭제")
-async def create_item(text: qa):
+
+@router.delete("/qna/{postID}", summary="Qna 글 삭제")
+async def create_item(postID: int, user_id: str = Header()):
     """
     'qa' 테이블의 데이터를 id를 통해 조회해서 삭제하는 엔드포인트입니다.
     
     - **id**: 게시글 id
+    - **current_user**: 현재 접속중인 유저 이름
     """
+    
+    query = "SELECT author FROM qa WHERE id = %s"
+    params = (postID)
+    author = await database.execute_query(query, params)
+    if user_id != author:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="게시물 삭제권한이 없습니다."
+        )
+    
     print("데이터 삭제 시작")
-
+    
     query = "DELETE FROM qa WHERE id = %s"
-    params = (text.id)
+    params = (postID)
     
     # 쿼리 실행
     await database.execute_query(query, params)

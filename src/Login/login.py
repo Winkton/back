@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from database import database
 from typing import Optional
 from pydantic import BaseModel
@@ -24,7 +24,21 @@ async def get_users(user: User):
     
     - **id**: 첫 번째 필터 값 (필수)
     - **password**: 두 번째 필터 값 (필수)
+    
     '''
+
+    if len(user.id)<=0 and len(user.id)>30:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ID는 1글자 이상 30글자 이하여야 합니다."
+        )
+    if len(user.password)<=0 and len(user.password)>25:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="비밀번호는 1글자 이상 25글자 이하여야 합니다."
+        )
+
+
     query = 'SELECT * FROM user WHERE id=%s AND password=%s'
     params = [user.id, user.password]
     result = await database.execute_query(query, tuple(params))

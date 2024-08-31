@@ -30,16 +30,32 @@ async def insert_item(user: User):
     print("데이터 삽입 시작")
 
     # id 필드가 있는지 여부에 따라 다른 INSERT 쿼리를 생성
-    if len(user.id)>0 and len(user.id)<=30:
-        # id 필드가 있는 경우
-        query = "INSERT INTO user (id, password, name, country) VALUES (%s, %s, %s, %s)"
-        params = (user.id, user.password, user.name, user.country)
-    else:
-        # id 필드가 없는 경우
+
+    if len(user.id)<=0 and len(user.id)>30:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ID required"
-        )    
+            detail="ID는 1글자 이상 30글자 이하여야 합니다."
+        )
+    if len(user.password)<=0 and len(user.password)>25:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="비밀번호는 1글자 이상 25글자 이하여야 합니다."
+        )
+    if len(user.name)<=0 and len(user.name)>50:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="이름은 1글자 이상 50글자 이하여야 합니다."
+        )
+    if len(user.country)<=0 and len(user.country)>20:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="국가 이름은 1글자 이상 20글자 이하여야 합니다."
+    
+        )
+    # id 필드가 있는 경우
+    query = "INSERT INTO user (id, password, name, country) VALUES (%s, %s, %s, %s)"
+    params = (user.id, user.password, user.name, user.country)
+    
     # 쿼리 실행
     await database.execute_query(query, params)
     
