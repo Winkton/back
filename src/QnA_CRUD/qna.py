@@ -17,13 +17,13 @@ class qaListResponse(BaseModel):
     result: List[qa]
 
 @router.post("", summary="Qna 글 생성")
-async def create_item(text: qa, Authorization: str = Header()):
+async def create_item(text: qa, userId: str = Header()):
     """
     데이터를 'qa' 테이블에 삽입하는 엔드포인트입니다.
     
     - **Content**: 게시글 내용
 
-    - **Authorization**: 작성자 이름 (parameter)
+    - **userId**: 작성자 이름 (parameter)
     """
     print("데이터 삽입 시작")
     if len(text.content)<=0 or len(text.content)>1000:
@@ -35,7 +35,7 @@ async def create_item(text: qa, Authorization: str = Header()):
 
     try:
         query = "INSERT INTO qa (content, author) VALUES (%s, %s)"
-        params = (text.content, Authorization)
+        params = (text.content, userId)
     
       # 쿼리 실행
         await database.execute_query(query, params)
@@ -62,12 +62,12 @@ class qaListResponse(BaseModel):
     result: List[qa]
 
 @router.get("", summary="Qna 글 불러오기", response_model=qaListResponse)
-async def read_item(userId: Optional[str] = None, user_id: str = Header()):
+async def read_item(targetUserId: Optional[str] = None, userId: str = Header()):
     """
     데이터를 'qa' 테이블에서 불러오는 엔드포인트입니다.
     
-    - **userId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
-    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **targetUserId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
 
     try:
@@ -88,11 +88,11 @@ async def read_item(userId: Optional[str] = None, user_id: str = Header()):
             GROUP BY post_id
         ) AS like_count_table ON q.id = like_count_table.post_id 
         """
-        params = [user_id]
+        params = [userId]
         
-        if userId:
+        if targetUserId:
             query += " WHERE q.author = %s"
-            params.append(userId)
+            params.append(targetUserId)
         
         # 쿼리 실행
         result = await database.execute_query(query, params)
@@ -110,11 +110,11 @@ async def read_item(userId: Optional[str] = None, user_id: str = Header()):
     }
     
 @router.get("/following", summary="Qna 글 불러오기", response_model=qaListResponse)
-async def read_item(Authorization: str = Header()):
+async def read_item(userId: str = Header()):
     """
     팔로잉한 사람들의 Q&A 목록을 받아오는 EndPoint입니다.
     
-    - **Authorization**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
     
     try:
@@ -138,7 +138,7 @@ async def read_item(Authorization: str = Header()):
         WHERE f.following = %s;
         """
         
-        params = [Authorization, Authorization]
+        params = [userId, userId]
         
         result = await database.execute_query(query, tuple(params)) 
         formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
@@ -161,13 +161,13 @@ class qaListResponse(BaseModel):
     result: List[qa]
 
 @router.put("/{postID}", summary="Qna 글 업데이트")
-async def update_item(postID: int, text: qa, Authorization: str = Header()):
+async def update_item(postID: int, text: qa, userId: str = Header()):
     """
     'qa' 테이블의 데이터를 id를 통해 불러와서 수정하는 엔드포인트입니다.
     
     - **postID**: 게시글 id (parameter)
 
-    - **Authorization**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
 
     - **content**: 게시글 내용
     """
@@ -181,9 +181,9 @@ async def update_item(postID: int, text: qa, Authorization: str = Header()):
     query = "SELECT author FROM qa WHERE id = %s"
     params = (postID)
     author = await database.execute_query(query, params)
-    print(Authorization)
+    print(userId)
     print(author)
-    if Authorization != author[0]['author']:
+    if userId != author[0]['author']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="게시물 삭제권한이 없습니다."
@@ -208,19 +208,19 @@ async def update_item(postID: int, text: qa, Authorization: str = Header()):
     return {"content":text.content}
 
 @router.delete("/{postID}", summary="Qna 글 삭제")
-async def delete_item(postID: int, Authorization: str = Header()):
+async def delete_item(postID: int, userId: str = Header()):
     """
     'qa' 테이블의 데이터를 id를 통해 조회해서 삭제하는 엔드포인트입니다.
     
     - **postID**: 게시글 id (parameter)
 
-    - **Authorization**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **userId**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
     
     query = "SELECT author FROM qa WHERE id = %s"
     params = (postID)
     author = await database.execute_query(query, params)
-    if Authorization != author[0]['author']:
+    if userId != author[0]['author']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="게시물 삭제권한이 없습니다."
