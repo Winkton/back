@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Header
 from database import database
 from typing import List, Optional
 from pydantic import BaseModel
@@ -64,7 +64,7 @@ async def get_list(id: Optional[str] = None):
 class OX(BaseModel):
     userID: str
     question: str
-    answer: bool
+    answer: bool    
 
 @router.post("", summary="OX 퀴즈 업로드")
 async def getList(ox: OX):
@@ -103,18 +103,16 @@ async def getList(ox: OX):
         )
 
 class OXModify(BaseModel):
-    postID: int
-    userID: str
     question: str
     answer: bool
 
-@router.put("", summary="OX 퀴즈 수정")
-async def modify(ox: OXModify):
+@router.put("/{postID}", summary="OX 퀴즈 수정")
+async def modify(postID: int, ox: OXModify, user_id: str = Header()):
     """
     OX 퀴즈를 수정하는 EndPoint입니다.
     
-    - **
-    - **userID**: 작성자 ID (필수) (str)
+    - **userID**: 작성자 ID (필수) (str) (Header)
+    - **postID**: 글 ID (필수) (int) (Parameter)
     - **question**: 질문할 문제 (필수) (str 100자 이하)
     - **answer**: 질문에 대한 답 (필수) (bool)
     """
@@ -125,17 +123,19 @@ async def modify(ox: OXModify):
             detail="질문 길이는 반드시 1자 이상 100이하여야 됩니다."
         )
         
-    if len(ox.userID) == 0:
+    if len(user_id) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="작성자는 필수입니다."
         )
         
     query = "SELECT * FROM ox WHERE author = %s AND id = %s"
-    params = (ox.userID, ox.postID)   
+    params = (user_id, postID)   
     count = await database.execute_query(query, params)
     
-    if count == 0:  
+    print(count)
+    
+    if len(count) == 0:  
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="해당 글에 수정 권한이 없습니다."
@@ -143,7 +143,7 @@ async def modify(ox: OXModify):
         
     try:
         query = "UPDATE ox SET question = %s, answer = %s WHERE author = %s AND id = %s"
-        params = (ox.question, ox.answer, ox.userID, ox.postID)        
+        params = (ox.question, ox.answer, user_id, postID)        
         affected_rows = await database.execute_query(query, params)
                 
     except Exception as e:
@@ -160,3 +160,29 @@ async def modify(ox: OXModify):
         )
 
     return {"message": "Successfully Modified"}
+
+@router.delete("/{postID}", summary="OX 퀴즈 수정")
+async def delete(postID: int, user_id: str = Header()):
+    """
+    'ox' 테이블의 데이터를 id를 통해 조회해서 삭제하는 엔드포인트입니다.
+    
+    - **postID**: 게시글 id (int)
+    """
+    
+    query = "SELECT * FROM ox WHERE author = %s AND id = %s"
+    params = (user_id, postID)   
+    count = await database.execute_query(query, params)
+    
+    if count == 0:  
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="해당 글에 수정 권한이 없거나 존재하지 않습니다."
+        )
+    
+    query = "DELETE FROM ox WHERE id = %s AND author = %s"
+    params = (postID, user_id)
+    
+    # 쿼리 실행
+    await database.execute_query(query, params)
+    
+    return {"message": "Data deleted successfully"}
