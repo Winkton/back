@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Header
 from database import database
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 router = APIRouter(
@@ -45,18 +45,20 @@ class SuccessResponse(BaseModel):
     message: str
 
 class OXItem(BaseModel):
-    id: int
-    question: str
-    answer: bool
-    author: str
-    postType: str
-    created_at: datetime
-    liked: bool
-    likeCount: int
+    id: int = Field(..., description="OX 퀴즈의 고유 ID")
+    question: str = Field(..., description="OX 퀴즈 질문 내용")
+    answer: bool = Field(..., description="OX 퀴즈의 정답 (True/False)")
+    author: str = Field(..., description="OX 퀴즈 작성자의 사용자 ID")
+    oCount: int = Field(..., description="퀴즈에 대한 'O' 투표 수")
+    xCount: int = Field(..., description="퀴즈에 대한 'X' 투표 수")
+    voted: bool = Field(..., description="현재 사용자가 이 퀴즈에 투표했는지 여부")
+    postType: str = Field(..., description="게시물의 유형 (예: 'ox')")
+    created_at: datetime = Field(..., description="퀴즈가 생성된 날짜와 시간")
+    liked: bool = Field(..., description="현재 사용자가 이 퀴즈를 좋아요 했는지 여부")
+    likeCount: int = Field(..., description="퀴즈에 대한 총 좋아요 수")
 
-# OX 퀴즈 목록 응답 모델 정의
 class OXListResponse(BaseModel):
-    result: List[OXItem]
+    result: List[OXItem] = Field(..., description="OX 퀴즈 항목의 목록")
 
 @router.get("", summary="OX 퀴즈 목록 받아오기", response_model=OXListResponse)
 async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
@@ -73,10 +75,14 @@ async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
         o.question, 
         o.answer,
         o.author,
+        o.o_count,
+        o.x_count,
         o.created_at,
+        CASE WHEN c.id IS NOT NULL THEN TRUE ELSE FALSE END AS voted,
         CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,
         COALESCE(like_count_table.like_count, 0) AS like_count 
     FROM ox o
+    LEFT JOIN `ox_check` c ON o.id = c.post_id AND c.user_id = %s
     LEFT JOIN `like` l ON o.id = l.post_id AND l.user_id = %s AND post_type = 'ox'
     LEFT JOIN (
         SELECT post_id, COUNT(*) AS like_count 
@@ -85,7 +91,7 @@ async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
         GROUP BY post_id
     ) AS like_count_table ON o.id = like_count_table.post_id 
     """
-    params = [user_id]
+    params = [user_id, user_id]
     
     if targetUserId:
         query += " WHERE o.author = %s"
@@ -93,7 +99,7 @@ async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
     
     result = await database.execute_query(query, tuple(params))
     
-    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
@@ -111,11 +117,15 @@ async def get_list(user_id: str = Header()):
         o.question, 
         o.answer,
         o.author,
+        o.o_count,
+        o.x_count,
         o.created_at,
+        CASE WHEN c.id IS NOT NULL THEN TRUE ELSE FALSE END AS voted,
         CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,  
         COALESCE(like_count_table.like_count, 0) AS like_count 
     FROM ox o
     JOIN following f ON f.follower = o.author  
+    LEFT JOIN `ox_check` c ON o.id = c.post_id AND c.user_id = %s
     LEFT JOIN `like` l ON o.id = l.post_id AND l.user_id = %s AND post_type = 'ox'
     LEFT JOIN (
         SELECT post_id, COUNT(*) AS like_count 
@@ -126,11 +136,11 @@ async def get_list(user_id: str = Header()):
     WHERE f.following = %s;  
     """
 
-    params = [user_id, user_id]
+    params = [user_id, user_id, user_id]
             
     result = await database.execute_query(query, tuple(params)) 
     
-    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
@@ -257,3 +267,41 @@ async def delete(postID: int, user_id: str = Header()):
     await database.execute_query(query, params)
     
     return {"message": "Data deleted successfully"}
+
+@router.post("/vote/{postId}", summary="OX 퀴즈 투표", response_model= SuccessResponse)
+async def getList(postId: int, user_id: str = Header()):
+    """
+    OX 퀴즈에 투표하는 EndPoint입니다.
+    
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
+    - **postId**: 투표할 퀴즈의 ID (필수) (int) (Parameter)
+    """
+    
+    query = "SELECT * FROM ox WHERE id = %s"
+    params = (postId)
+    result = await database.execute_query(query, params)
+    
+    if len(result) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="해당 퀴즈가 존재하지 않습니다."
+        )
+        
+    query = "SELECT id FROM `ox_check` WHERE post_id = %s AND user_id = %s"
+    params = (postId, user_id)
+    result = await database.execute_query(query, params)
+    
+    if len(result) == 0:
+        query = "INSERT INTO ox_check (user_id, post_id) VALUES (%s, %s)"
+        params = (user_id, postId)
+        result = await database.execute_query(query, params)
+        
+        return {"message": "Voted successfully"}
+    else:
+        query = "DELETE FROM ox_check WHERE user_id = %s AND post_id = %s"
+        params = (user_id, postId)
+        result = await database.execute_query(query, params)
+        
+        return {"message": "Voted Canceled successfully"}
+    
+    
