@@ -174,7 +174,7 @@ class User(BaseModel):
 async def get_users(user: User):
 
     '''  
-    ID를 받아서 DB에서 조회하는 엔드포인트입니다.
+    ID와 PW를 받아서 DB를 업데이트하는 엔드포인트입니다.
     
     - **userId**: 찾을 유저 ID
     
@@ -186,13 +186,17 @@ async def get_users(user: User):
             detail="ID는 1글자 이상 30글자 이하여야 합니다."
         )    
 
+    if len(user.password)<=0 or len(user.password)>25:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="비밀번호는 1글자 이상 25글자 이하여야 합니다."
+        )
+    
+
     try:
-        query = 'SELECT * FROM user WHERE id=%s'
-        params = user.userId
-        result = await database.execute_query(query, params)
-        print(result)
-        if len(result) == 0:
-            return {"Message": "요청하신 ID가 없습니다."}
+        query = 'UPDATE user SET password = %s WHERE id = %s'
+        params = (user.password, user.userId)
+        await database.execute_query(query, params)
                 
     except Exception as e:
         print(e)
@@ -202,4 +206,4 @@ async def get_users(user: User):
         )
 
     
-    return {"Message": "요청하신 ID가 존재합니다."}
+    return {"Message": "비밀번호 변경 완료"}
