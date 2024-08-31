@@ -113,6 +113,33 @@ async def follow_user(follow_user: str, user_id: str = Header()):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="예상치 못한 오류가 발생했습니다."
         )
+        
+@router.delete("/{follow_user}", summary="팔로우 취소", response_model= SuccessResponse)
+async def delete(postID: int, user_id: str = Header()):
+    """
+    특정 유저를 팔로잉을 취소합니다.
+    
+    - **userID**: 작성자 ID (필수) (str) (Header)
+    - **follow_user**: 팔로잉할 유저 ID (필수) (str) (Parameter)
+    """
+    
+    query = "SELECT * FROM ox WHERE follower = %s"
+    params = (user_id, postID)   
+    count = await database.execute_query(query, params)
+    
+    if len(count) == 0:  
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="해당 글에 삭제 권한이 없거나 존재하지 않습니다."
+        )
+    
+    query = "DELETE FROM ox WHERE id = %s AND author = %s"
+    params = (postID, user_id)
+    
+    # 쿼리 실행
+    await database.execute_query(query, params)
+    
+    return {"message": "Data deleted successfully"}
     
     
     
