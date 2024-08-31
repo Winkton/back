@@ -263,8 +263,13 @@ async def delete(postID: int, userId: str = Header()):
 
 class OXVote(BaseModel):
     vote: bool
+    
+class OXListResponse(BaseModel):
+    message: str
+    oCount: int
+    xCount: int 
 
-@router.post("/vote/{postId}", summary="OX 퀴즈 투표", response_model= SuccessResponse)
+@router.post("/vote/{postId}", summary="OX 퀴즈 투표", response_model=OXListResponse)
 async def getList(postId: int, vote: OXVote, userId: str = Header()):
     """
     OX 퀴즈에 투표하는 EndPoint입니다.
@@ -300,7 +305,11 @@ async def getList(postId: int, vote: OXVote, userId: str = Header()):
             
         await database.execute_query(update_query, (postId,))
         
-        return {"message": "Voted successfully"}
+        query = "SELECT o_count, x_count FROM ox WHERE id = %s"
+        params = (postId)
+        result = await database.execute_query(query, params)
+        
+        return {"message": "Voted successfully", "oCount": result[0]['o_count'], "xCount": result[0]['x_count']}
     else:
         if result[0]['vote']:  
             update_query = "UPDATE ox SET o_count = o_count - 1 WHERE id = %s"
@@ -313,6 +322,11 @@ async def getList(postId: int, vote: OXVote, userId: str = Header()):
         params = (userId, postId)
         result = await database.execute_query(query, params)
         
-        return {"message": "Voted Canceled successfully"}
+        query = "SELECT o_count, x_count FROM ox WHERE id = %s"
+        params = (postId)
+        result = await database.execute_query(query, params)
+        
+        return {"message": "Voted Canceled successfully", "oCount": result[0]['o_count'], "xCount": result[0]['x_count']}
+
     
     
