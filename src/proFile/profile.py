@@ -42,7 +42,7 @@ async def insert_item(userId: str):
         params = (userId)
         # 쿼리 실행
         result = await database.execute_query(query, params)
-        formatted_result = [{"userId": row['id'], "username": row['name'], "country": row['country'], "following_count": row['following_count']} for row in result]
+        formatted_result = [{"userId": row['id'], "username": row['name'], "country": row['country'], "followerCount": row['following_count']} for row in result]
         return {"result": formatted_result}
 
     except Exception as e:
