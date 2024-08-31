@@ -75,7 +75,6 @@ async def insert_item(user: User):
     - **username**: 이름 (필수)
     - **country**: 국가 (필수)
     """
-    print("데이터 삽입 시작")
 
     # id 필드가 있는지 여부에 따라 다른 INSERT 쿼리를 생성
 
@@ -101,20 +100,26 @@ async def insert_item(user: User):
     
         )
     
+    query = 'SELECT * FROM user WHERE id=%s AND password=%s'
+    params = [user.userId, user.password]
+    result = await database.execute_query(query, tuple(params))
     try:
-        # id 필드가 있는 경우
+        # id 필드가 없는 경우
         query = "INSERT INTO user (id, password, name, country) VALUES (%s, %s, %s, %s)"
         params = (user.userId, user.password, user.username, user.country)
-    
         # 쿼리 실행
         await database.execute_query(query, params)
-                
     except Exception as e:
-        print(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="예상치 못한 오류가 발생했습니다."
-        )
+        if e.args[0] == 1062:   
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이미 존재하는 사용자입니다."
+            )     
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="예상치 못한 오류가 발생했습니다."
+            )
     
     return {
         "userId": user.userId,
