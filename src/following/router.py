@@ -80,8 +80,8 @@ async def follow_user(follow_user: str, user_id: str = Header()):
     - **follow_user**: 팔로잉할 유저 ID (필수) (str) (Parameter)
     """
     
-    query = "SELECT * FROM user WHERE id = %s AND id = %s"
-    params = (follow_user, user_id)   
+    query = "SELECT * FROM user WHERE id = %s"
+    params = (follow_user)   
     count = await database.execute_query(query, params)
     
     if len(count) == 0:  
