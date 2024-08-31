@@ -53,10 +53,3 @@ async def insert_item(item: like, user_id: str = Header()):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="예상치 못한 오류가 발생했습니다."
         )
-    print("데이터 조회 완료")
-
-
-    
-
-
-    return {"message": "Data searched successfully"}
