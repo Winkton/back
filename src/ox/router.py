@@ -97,7 +97,7 @@ async def get_list(targetUserId: Optional[str] = None, userId: str = Header()):
     
     result = await database.execute_query(query, tuple(params))
     
-    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": bool(row["voted"]), "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": bool(row["liked"]), "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
@@ -137,7 +137,7 @@ async def get_list(userId: str = Header()):
             
     result = await database.execute_query(query, tuple(params)) 
     
-    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": bool(row["voted"]), "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": bool(row["liked"]), "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
@@ -356,7 +356,7 @@ async def get_ox_detail(postID: str, userId: str = Header()):
 
     result = await database.execute_query(query, params)
     
-    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": bool(row["voted"]), "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": bool(row["liked"]), "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
