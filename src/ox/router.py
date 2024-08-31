@@ -268,13 +268,17 @@ async def delete(postID: int, user_id: str = Header()):
     
     return {"message": "Data deleted successfully"}
 
+class OXVote(BaseModel):
+    vote: bool
+
 @router.post("/vote/{postId}", summary="OX 퀴즈 투표", response_model= SuccessResponse)
-async def getList(postId: int, user_id: str = Header()):
+async def getList(postId: int, vote: OXVote, user_id: str = Header()):
     """
     OX 퀴즈에 투표하는 EndPoint입니다.
     
     - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     - **postId**: 투표할 퀴즈의 ID (필수) (int) (Parameter)
+    - **vote**: 사용자가 선택한 투표 (True: 'O', False: 'X')
     """
     
     query = "SELECT * FROM ox WHERE id = %s"
@@ -287,17 +291,31 @@ async def getList(postId: int, user_id: str = Header()):
             detail="해당 퀴즈가 존재하지 않습니다."
         )
         
-    query = "SELECT id FROM `ox_check` WHERE post_id = %s AND user_id = %s"
+    query = "SELECT * FROM `ox_check` WHERE post_id = %s AND user_id = %s"
     params = (postId, user_id)
     result = await database.execute_query(query, params)
     
     if len(result) == 0:
-        query = "INSERT INTO ox_check (user_id, post_id) VALUES (%s, %s)"
-        params = (user_id, postId)
+        query = "INSERT INTO ox_check (user_id, post_id, vote) VALUES (%s, %s, %s)"
+        params = (user_id, postId, vote.vote)
         result = await database.execute_query(query, params)
+        
+        if vote.vote:  
+            update_query = "UPDATE ox SET o_count = o_count + 1 WHERE id = %s"
+        else:  
+            update_query = "UPDATE ox SET x_count = x_count + 1 WHERE id = %s"
+            
+        await database.execute_query(update_query, (postId,))
         
         return {"message": "Voted successfully"}
     else:
+        if result[0]['vote']:  
+            update_query = "UPDATE ox SET o_count = o_count - 1 WHERE id = %s"
+        else:  
+            update_query = "UPDATE ox SET x_count = x_count - 1 WHERE id = %s"
+        
+        await database.execute_query(update_query, (postId,))
+            
         query = "DELETE FROM ox_check WHERE user_id = %s AND post_id = %s"
         params = (user_id, postId)
         result = await database.execute_query(query, params)

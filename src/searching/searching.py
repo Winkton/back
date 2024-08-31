@@ -8,8 +8,6 @@ router = APIRouter(
     responses={404: {"description" : "Not Found"}},
 )
 
-
-
 @router.post("", summary="유저 검색 시 팔로우 여부")
 async def user_search(user_id: str = Header()):
     """

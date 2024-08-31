@@ -83,6 +83,12 @@ async def follow_user(follow_user: str, user_id: str = Header()):
     - **follow_user**: 팔로잉할 유저 ID (필수) (str) (Parameter)
     """
     
+    if(user_id == follow_user):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="자기 자신은 팔로우를 할 수 없습니다"
+        )
+    
     query = "SELECT * FROM user WHERE id = %s"
     params = (follow_user)   
     count = await database.execute_query(query, params)
