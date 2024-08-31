@@ -25,11 +25,24 @@ async def insert_item(userId: str):
         )
     
     try:
-        query = "SELECT * FROM user WHERE id = %s"
+        query = """
+        SELECT 
+        u.*,
+        COALESCE(f.following_count, 0) AS following_count
+        FROM 
+            user u
+        LEFT JOIN (
+            SELECT follower, COUNT(*) AS following_count 
+            FROM following
+            GROUP BY follower
+        ) f ON u.id = f.follower 
+        WHERE 
+            u.id = %s
+        """
         params = (userId)
         # 쿼리 실행
         result = await database.execute_query(query, params)
-        formatted_result = [{"userId": row['id'], "username": row['name'], "country": row['country']} for row in result]
+        formatted_result = [{"userId": row['id'], "username": row['name'], "country": row['country'], "following_count": row['following_count']} for row in result]
         return {"result": formatted_result}
 
     except Exception as e:

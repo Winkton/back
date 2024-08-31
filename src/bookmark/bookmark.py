@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Header
 from database import database
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 router = APIRouter(
@@ -53,14 +53,16 @@ async def insert_item(item: bookmark, user_id: str = Header()):
         )
 
 class OXItem(BaseModel):
-    id: int
-    question: str
-    answer: bool
-    author: str
-    postType: str
-    created_at: datetime
-    liked: bool
-    likeCount: int
+    id: int = Field(..., description="OX 퀴즈의 고유 ID")
+    content: str = Field(..., description="OX 퀴즈 질문 내용")
+    author: str = Field(..., description="OX 퀴즈 작성자의 사용자 ID")
+    oCount: int = Field(..., description="퀴즈에 대한 'O' 투표 수")
+    xCount: int = Field(..., description="퀴즈에 대한 'X' 투표 수")
+    voted: bool = Field(..., description="현재 사용자가 이 퀴즈에 투표했는지 여부")
+    postType: str = Field(..., description="게시물의 유형 (예: 'ox')")
+    created_at: datetime = Field(..., description="퀴즈가 생성된 날짜와 시간")
+    liked: bool = Field(..., description="현재 사용자가 이 퀴즈를 좋아요 했는지 여부")
+    likeCount: int = Field(..., description="퀴즈에 대한 총 좋아요 수")
     
 class qa(BaseModel):
     id: int
@@ -105,14 +107,17 @@ async def search_item(targetUserId: str, user_id: str = Header()):
         query = """
         SELECT 
             o.id, 
-            o.question, 
-            o.answer,
+            o.content,
             o.author,
             o.created_at,
+            o.o_count,
+            o.x_count,
+            CASE WHEN c.id IS NOT NULL THEN TRUE ELSE FALSE END AS voted,
             CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,  
             COALESCE(like_count_table.like_count, 0) AS like_count 
         FROM ox o
         JOIN `bookmark` b ON o.id = b.post_id
+        LEFT JOIN `ox_check` c ON o.id = c.post_id AND c.user_id = %s
         LEFT JOIN `like` l ON o.id = l.post_id AND l.user_id = %s AND l.post_type = 'ox'
         LEFT JOIN (
             SELECT post_id, COUNT(*) AS like_count 
@@ -122,11 +127,11 @@ async def search_item(targetUserId: str, user_id: str = Header()):
         ) AS like_count_table ON o.id = like_count_table.post_id 
         WHERE b.user_id = %s AND b.post_type = 'ox'
         """
-        params = (user_id, targetUserId)
+        params = (user_id, user_id, targetUserId)
         # 쿼리 실행
         result = await database.execute_query(query, params)
-        ox = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
-        
+        ox = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    
         query = """
         SELECT 
             q.id, 

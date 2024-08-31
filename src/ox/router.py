@@ -46,8 +46,7 @@ class SuccessResponse(BaseModel):
 
 class OXItem(BaseModel):
     id: int = Field(..., description="OX 퀴즈의 고유 ID")
-    question: str = Field(..., description="OX 퀴즈 질문 내용")
-    answer: bool = Field(..., description="OX 퀴즈의 정답 (True/False)")
+    content: str = Field(..., description="OX 퀴즈 질문 내용")
     author: str = Field(..., description="OX 퀴즈 작성자의 사용자 ID")
     oCount: int = Field(..., description="퀴즈에 대한 'O' 투표 수")
     xCount: int = Field(..., description="퀴즈에 대한 'X' 투표 수")
@@ -72,8 +71,7 @@ async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
     query = """
     SELECT 
         o.id, 
-        o.question, 
-        o.answer,
+        o.content, 
         o.author,
         o.o_count,
         o.x_count,
@@ -99,7 +97,7 @@ async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
     
     result = await database.execute_query(query, tuple(params))
     
-    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
@@ -114,8 +112,7 @@ async def get_list(user_id: str = Header()):
     query = """
     SELECT 
         o.id, 
-        o.question, 
-        o.answer,
+        o.content, 
         o.author,
         o.o_count,
         o.x_count,
@@ -140,13 +137,12 @@ async def get_list(user_id: str = Header()):
             
     result = await database.execute_query(query, tuple(params)) 
     
-    formatted_result = [{"id": row['id'], "question": row['question'], "answer": row['answer'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
     
     return {"result": formatted_result}
     
 class OX(BaseModel):
-    question: str
-    answer: bool    
+    content: str  
 
 @router.post("", summary="OX 퀴즈 업로드", response_model= SuccessResponse)
 async def getList(ox: OX, user_id: str = Header()):
@@ -154,11 +150,10 @@ async def getList(ox: OX, user_id: str = Header()):
     OX 퀴즈를 업로드하는 EndPoint입니다.
     
     - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
-    - **question**: 질문할 문제 (필수) (str 100자 이하)
-    - **answer**: 질문에 대한 답 (필수) (bool)
+    - **content**: 질문할 문제 (필수) (str 100자 이하)
     """
     
-    if len(ox.question) > 100 or len(ox.question) == 0:
+    if len(ox.content) > 100 or len(ox.content) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="질문 길이는 반드시 1자 이상 100이하여야 됩니다."
@@ -171,8 +166,8 @@ async def getList(ox: OX, user_id: str = Header()):
         )
         
     try:
-        query = "INSERT INTO ox (author, question, answer) VALUES (%s, %s, %s)"
-        params = (user_id, ox.question, ox.answer)
+        query = "INSERT INTO ox (author, content) VALUES (%s, %s)"
+        params = (user_id, ox.content)
         
         await database.execute_query(query, params)
         
@@ -185,8 +180,7 @@ async def getList(ox: OX, user_id: str = Header()):
         )
 
 class OXModify(BaseModel):
-    question: str
-    answer: bool
+    content: str
 
 @router.put("/{postID}", summary="OX 퀴즈 수정", response_model= SuccessResponse)
 async def modify(postID: int, ox: OXModify, user_id: str = Header()):
@@ -195,11 +189,10 @@ async def modify(postID: int, ox: OXModify, user_id: str = Header()):
     
     - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     - **postID**: 글 ID (필수) (int) (Parameter)
-    - **question**: 질문할 문제 (필수) (str 100자 이하)
-    - **answer**: 질문에 대한 답 (필수) (bool)
+    - **content**: 질문할 문제 (필수) (str 100자 이하)
     """
     
-    if len(ox.question) > 100 or len(ox.question) == 0:
+    if len(ox.content) > 100 or len(ox.content) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="질문 길이는 반드시 1자 이상 100이하여야 됩니다."
@@ -222,8 +215,8 @@ async def modify(postID: int, ox: OXModify, user_id: str = Header()):
         )
         
     try:
-        query = "UPDATE ox SET question = %s, answer = %s WHERE author = %s AND id = %s"
-        params = (ox.question, ox.answer, user_id, postID)        
+        query = "UPDATE ox SET content = %s WHERE author = %s AND id = %s"
+        params = (ox.content, user_id, postID)        
         affected_rows = await database.execute_query(query, params)
                 
     except Exception as e:
