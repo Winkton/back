@@ -11,7 +11,7 @@ from bookmark import bookmark
 from like import like
 from Auth import login
 from searching import searching
-
+from proFile import profile
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,6 +39,8 @@ app.include_router(following_router.router, prefix="/api/follow")
 app.include_router(like.router, prefix="/api/like")
 app.include_router(bookmark.router, prefix="/api/bookmark")
 app.include_router(searching.router, prefix="/api/search")
+app.include_router(profile.router, prefix="/api/profile")
+
 
 
 if __name__ == "__main__":
