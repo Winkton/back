@@ -75,15 +75,15 @@ async def get_following_user(targetUserId: str):
         )
         
 @router.post("/{follow_user}", summary="특정 유저 팔로잉하기", response_model= SuccessResponse)
-async def follow_user(follow_user: str, user_id: str = Header()):
+async def follow_user(follow_user: str, userId: str = Header()):
     """
     특정 유저를 팔로잉 합니다.
     
-    - **userID**: 작성자 ID (필수) (str) (Header)
+    - **userId**: 작성자 ID (필수) (str) (Header)
     - **follow_user**: 팔로잉할 유저 ID (필수) (str) (Parameter)
     """
     
-    if(user_id == follow_user):
+    if(userId == follow_user):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="자기 자신은 팔로우를 할 수 없습니다"
@@ -100,7 +100,7 @@ async def follow_user(follow_user: str, user_id: str = Header()):
         )
     
     query = "SELECT * FROM following WHERE following = %s AND follower = %s"
-    params = (user_id, follow_user)   
+    params = (userId, follow_user)   
     count = await database.execute_query(query, params)
 
     if len(count) != 0:  
@@ -111,7 +111,7 @@ async def follow_user(follow_user: str, user_id: str = Header()):
     
     try:
         query = "INSERT INTO following (following, follower) VALUES (%s, %s)"
-        params = (user_id, follow_user)
+        params = (userId, follow_user)
         
         await database.execute_query(query, params)
         
@@ -124,16 +124,16 @@ async def follow_user(follow_user: str, user_id: str = Header()):
         )
         
 @router.delete("/{follow_user}", summary="팔로우 취소", response_model= SuccessResponse)
-async def delete(follow_user: str, user_id: str = Header()):
+async def delete(follow_user: str, userId: str = Header()):
     """
     특정 유저를 팔로잉을 취소합니다.
     
-    - **userID**: 작성자 ID (필수) (str) (Header)
+    - **userId**: 작성자 ID (필수) (str) (Header)
     - **follow_user**: 팔로잉할 유저 ID (필수) (str) (Parameter)
     """
     
     query = "SELECT * FROM following WHERE follower = %s AND following = %s"
-    params = (follow_user, user_id)   
+    params = (follow_user, userId)   
     count = await database.execute_query(query, params)
     
     if len(count) == 0:  
@@ -143,7 +143,7 @@ async def delete(follow_user: str, user_id: str = Header()):
         )
     
     query = "DELETE FROM following WHERE follower = %s AND following = %s"
-    params = (follow_user, user_id)
+    params = (follow_user, userId)
     
     # 쿼리 실행
     await database.execute_query(query, params)

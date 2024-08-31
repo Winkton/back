@@ -14,16 +14,16 @@ class bookmark(BaseModel):
     postType: str
 
 @router.post("", summary="리포스트(북마크)")
-async def insert_item(item: bookmark, user_id: str = Header()):
+async def insert_item(item: bookmark, userId: str = Header()):
     """
     글의 좋아요 여부와 누른 사람들을 담은 엔드포인트입니다.
    
     - **post_id**: 글 ID
 
-    - **user_id**: 현재 접속중인 유저 이름 (parameter)
+    - **userId**: 현재 접속중인 유저 이름 (parameter)
     """
     print("데이터 조회 시작")
-    if len(user_id)<=0 or len(user_id)>25:
+    if len(userId)<=0 or len(userId)>25:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="유저 이름은 1글자 이상 25글자 이하여야 합니다."
@@ -31,18 +31,18 @@ async def insert_item(item: bookmark, user_id: str = Header()):
     
     try:
         query = "SELECT * FROM bookmark WHERE user_id = %s AND post_id = %s AND post_type = %s"
-        params = (user_id, item.postID, item.postType)
+        params = (userId, item.postID, item.postType)
         # 쿼리 실행
         result = await database.execute_query(query, params)
 
         if len(result) == 0:
             query = "INSERT INTO bookmark (user_id, post_id, post_type) VALUES (%s, %s, %s)"
-            params = (user_id, item.postID, item.postType)
+            params = (userId, item.postID, item.postType)
             await database.execute_query(query, params)
             return {"message": "Bookmarked successfully"}
         else:
             query = "DELETE FROM `bookmark` WHERE user_id = %s AND post_id = %s AND post_type = %s"
-            params = (user_id, item.postID, item.postType)
+            params = (userId, item.postID, item.postType)
             await database.execute_query(query, params)
             return {"message": "Bookmarked contents removed successfully"}
     except Exception as e:
@@ -77,14 +77,14 @@ class bookmarkListResponse(BaseModel):
     oxList: List[OXItem]
     qaList: List[qa]
 
-@router.get("/{userId}", summary="리포스트(북마크) 조회하기", response_model=bookmarkListResponse)
-async def search_item(targetUserId: str, user_id: str = Header()):
+@router.get("/{targetUserId}", summary="리포스트(북마크) 조회하기", response_model=bookmarkListResponse)
+async def search_item(targetUserId: str, userId: str = Header()):
     """
     북마크에 담은 포스트들을 조회하는 엔드포인트입니다.
     
     - **targetUserId**: 북마크를 조회할려는 user의 ID (필수) (parameter)
 
-    - **user_id**: 현재 접속중인 유저 이름 (parameter)
+    - **userId**: 현재 접속중인 유저 이름 (parameter)
     """
     print("데이터 조회 시작")
     if len(targetUserId)<=0 or len(targetUserId)>25:
@@ -127,7 +127,7 @@ async def search_item(targetUserId: str, user_id: str = Header()):
         ) AS like_count_table ON o.id = like_count_table.post_id 
         WHERE b.user_id = %s AND b.post_type = 'ox'
         """
-        params = (user_id, user_id, targetUserId)
+        params = (userId, userId, targetUserId)
         # 쿼리 실행
         result = await database.execute_query(query, params)
         ox = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
@@ -151,7 +151,7 @@ async def search_item(targetUserId: str, user_id: str = Header()):
         ) AS like_count_table ON q.id = like_count_table.post_id 
         WHERE b.user_id = %s AND b.post_type = 'qa'
         """
-        params = (user_id, targetUserId)
+        params = (userId, targetUserId)
         # 쿼리 실행
         result2 = await database.execute_query(query, params)
         qa = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result2]
