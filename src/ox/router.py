@@ -59,12 +59,12 @@ class OXListResponse(BaseModel):
     result: List[OXItem]
 
 @router.get("", summary="OX 퀴즈 목록 받아오기", response_model=OXListResponse)
-async def get_list(userId: Optional[str] = None, user_id: str = Header()):
+async def get_list(targetUserId: Optional[str] = None, user_id: str = Header()):
     """
     OX 퀴즈 목록을 받아오는 EndPoint입니다.
     
-    - **userId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
-    - **user_id**: 로그인한 유저 ID (필수) (str) (Header)
+    - **targetUserId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
     
     query = """
@@ -87,9 +87,9 @@ async def get_list(userId: Optional[str] = None, user_id: str = Header()):
     """
     params = [user_id]
     
-    if userId:
+    if targetUserId:
         query += " WHERE o.author = %s"
-        params.append(userId)
+        params.append(targetUserId)
     
     result = await database.execute_query(query, tuple(params))
     
@@ -143,7 +143,7 @@ async def getList(ox: OX, user_id: str = Header()):
     """
     OX 퀴즈를 업로드하는 EndPoint입니다.
     
-    - **user_id**: 작성자 ID (필수) (str) (Header)
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     - **question**: 질문할 문제 (필수) (str 100자 이하)
     - **answer**: 질문에 대한 답 (필수) (bool)
     """
@@ -183,7 +183,7 @@ async def modify(postID: int, ox: OXModify, user_id: str = Header()):
     """
     OX 퀴즈를 수정하는 EndPoint입니다.
     
-    - **userID**: 작성자 ID (필수) (str) (Header)
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     - **postID**: 글 ID (필수) (int) (Parameter)
     - **question**: 질문할 문제 (필수) (str 100자 이하)
     - **answer**: 질문에 대한 답 (필수) (bool)
@@ -237,7 +237,7 @@ async def delete(postID: int, user_id: str = Header()):
     'ox' 테이블의 데이터를 id를 통해 조회해서 삭제하는 엔드포인트입니다.
     
     - **postID**: 게시글 id (int)
-    - **userID**: 작성자 ID (필수) (str) (Header)
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
     
     query = "SELECT * FROM ox WHERE author = %s AND id = %s"

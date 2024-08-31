@@ -16,7 +16,7 @@ class qa(BaseModel):
 class qaListResponse(BaseModel):
     result: List[qa]
 
-@router.post("", summary="Qna 글 생성", response_model=qaListResponse)
+@router.post("", summary="Qna 글 생성")
 async def create_item(text: qa, user_id: str = Header()):
     """
     데이터를 'qa' 테이블에 삽입하는 엔드포인트입니다.
@@ -47,8 +47,6 @@ async def create_item(text: qa, user_id: str = Header()):
             detail="예상치 못한 오류가 발생했습니다."
         )
     
-    
-    
     return {"content":text.content}
 
 class qa(BaseModel):
@@ -69,7 +67,7 @@ async def read_item(userId: Optional[str] = None, user_id: str = Header()):
     데이터를 'qa' 테이블에서 불러오는 엔드포인트입니다.
     
     - **userId**: 작성자 ID (선택) (str) (없으면 전체를 받아옵니다)
-    - **user_id**: 로그인한 유저 ID (필수) (str) (Header)
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
 
     try:
@@ -93,7 +91,7 @@ async def read_item(userId: Optional[str] = None, user_id: str = Header()):
         params = [user_id]
         
         if userId:
-            query += " WHERE o.author = %s"
+            query += " WHERE q.author = %s"
             params.append(userId)
         
         # 쿼리 실행
@@ -116,8 +114,7 @@ async def read_item(user_id: str = Header()):
     """
     팔로잉한 사람들의 Q&A 목록을 받아오는 EndPoint입니다.
     
-    - **userId**: 작성자 ID (필수) (str)
-    - **user_id**: 로그인한 유저 ID (필수) (str) (Header)
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
     
     try:
@@ -163,14 +160,14 @@ class qa(BaseModel):
 class qaListResponse(BaseModel):
     result: List[qa]
 
-@router.put("/{postID}", summary="Qna 글 업데이트", response_model=qaListResponse)
+@router.put("/{postID}", summary="Qna 글 업데이트")
 async def update_item(postID: int, text: qa, user_id: str = Header()):
     """
     'qa' 테이블의 데이터를 id를 통해 불러와서 수정하는 엔드포인트입니다.
     
     - **postID**: 게시글 id (parameter)
 
-    - **user_id**: 현재 접속중인 유저 이름 (parameter)
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
 
     - **content**: 게시글 내용
     """
@@ -181,11 +178,12 @@ async def update_item(postID: int, text: qa, user_id: str = Header()):
             detail="글 내용은 1글자 이상 1000글자 이하여야 합니다."
         )
     
-
     query = "SELECT author FROM qa WHERE id = %s"
     params = (postID)
     author = await database.execute_query(query, params)
-    if user_id != author:
+    print(user_id)
+    print(author)
+    if user_id != author[0]['author']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="게시물 삭제권한이 없습니다."
@@ -209,10 +207,6 @@ async def update_item(postID: int, text: qa, user_id: str = Header()):
     
     return {"content":text.content}
 
-
-
-
-
 @router.delete("/{postID}", summary="Qna 글 삭제")
 async def delete_item(postID: int, user_id: str = Header()):
     """
@@ -220,13 +214,13 @@ async def delete_item(postID: int, user_id: str = Header()):
     
     - **postID**: 게시글 id (parameter)
 
-    - **user_id**: 현재 접속중인 유저 이름 (parameter)
+    - **user_id**: 현재 접속중인 유저 ID (필수) (str) (Header)
     """
     
     query = "SELECT author FROM qa WHERE id = %s"
     params = (postID)
     author = await database.execute_query(query, params)
-    if user_id != author:
+    if user_id != author[0]['author']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="게시물 삭제권한이 없습니다."
