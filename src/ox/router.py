@@ -328,5 +328,35 @@ async def getList(postId: int, vote: OXVote, userId: str = Header()):
         
         return {"message": "Voted Canceled successfully", "oCount": result[0]['o_count'], "xCount": result[0]['x_count']}
 
+@router.get("/detail/{postID}")
+async def get_ox_detail(postID: str, userId: str = Header()):
+    query = """
+    SELECT 
+        o.id, 
+        o.content, 
+        o.author,
+        o.o_count,
+        o.x_count,
+        o.created_at,
+        CASE WHEN c.id IS NOT NULL THEN TRUE ELSE FALSE END AS voted,
+        CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,
+        COALESCE(like_count_table.like_count, 0) AS like_count 
+    FROM ox o
+    LEFT JOIN `ox_check` c ON o.id = c.post_id AND c.user_id = %s
+    LEFT JOIN `like` l ON o.id = l.post_id AND l.user_id = %s AND post_type = 'ox'
+    LEFT JOIN (
+        SELECT post_id, COUNT(*) AS like_count 
+        FROM `like`
+        WHERE post_type = 'ox'
+        GROUP BY post_id
+    ) AS like_count_table ON o.id = like_count_table.post_id
+    WHERE o.id = %s 
+    """
+    params = [userId, userId, postID]
+
+    result = await database.execute_query(query, params)
     
+    formatted_result = [{"id": row['id'], "content": row['content'], "oCount": row["o_count"], "xCount": row["x_count"], "voted": row["voted"], "author": row["author"], "created_at": row["created_at"], "postType": "ox", "liked": row["liked"], "likeCount": row["like_count"]} for row in result]  
+    
+    return {"result": formatted_result}
     

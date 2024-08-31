@@ -245,3 +245,57 @@ async def delete_item(postID: int, userId: str = Header()):
     
     
     return {"message": "Data deleted successfully"}
+
+@router.get("/detail/{postID}")
+async def get_qna_detail(postID: str, userId: str = Header()):
+    query = """
+        SELECT
+            q.id, 
+            q.content, 
+            q.author, 
+            q.created_at,
+            CASE WHEN l.id IS NOT NULL THEN TRUE ELSE FALSE END AS liked,  
+            COALESCE(like_count_table.like_count, 0) AS like_count 
+        FROM qa q
+        LEFT JOIN `like` l ON q.id = l.post_id AND l.user_id = %s AND post_type = 'qa'
+        LEFT JOIN (
+            SELECT post_id, COUNT(*) AS like_count 
+            FROM `like`
+            WHERE post_type = 'qa'
+            GROUP BY post_id
+        ) AS like_count_table ON q.id = like_count_table.post_id 
+        WHERE q.id = %s
+        """
+    params = [userId, postID]
+
+    result = await database.execute_query(query, params)
+    formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "postType": "qa", "created_at":row['created_at'], "liked": row["liked"], "likeCount": row["like_count"]} for row in result]
+    
+    query = """
+    SELECT 
+        c.*, 
+        u.name AS name
+    FROM comment c
+    JOIN user u ON c.author = u.id
+    WHERE c.post_id = %s;
+    """
+    
+    params = [postID]
+
+    result = await database.execute_query(query, params)
+    comment_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "created_at": row['created_at'], "name": row['name']} for row in result]
+    
+    return {"result": {"detail": formatted_result, "comments": comment_result}}
+
+class comment(BaseModel):
+    content: str
+    
+@router.post("/comment/{postID}")
+async def upload_comment(postID: str, comment: comment, userId: str = Header()):
+    query = "INSERT INTO comment (content, author, post_id) VALUES (%s, %s, %s)"
+    params = (comment.content, userId, postID)
+    
+    await database.execute_query(query, params)
+    
+    return {"message": "Succesfully upload Comment"}
+    
