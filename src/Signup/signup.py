@@ -52,11 +52,21 @@ async def insert_item(user: User):
             detail="국가 이름은 1글자 이상 20글자 이하여야 합니다."
     
         )
-    # id 필드가 있는 경우
-    query = "INSERT INTO user (id, password, name, country) VALUES (%s, %s, %s, %s)"
-    params = (user.id, user.password, user.name, user.country)
     
-    # 쿼리 실행
-    await database.execute_query(query, params)
+    try:
+        # id 필드가 있는 경우
+        query = "INSERT INTO user (id, password, name, country) VALUES (%s, %s, %s, %s)"
+        params = (user.id, user.password, user.name, user.country)
+    
+        # 쿼리 실행
+        await database.execute_query(query, params)
+                
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="예상치 못한 오류가 발생했습니다."
+        )
+    
     
     return {"message": "Data inserted successfully"}
