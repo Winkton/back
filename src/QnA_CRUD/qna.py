@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Header
 from database import database
 from typing import Optional, List
 from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter(
     tags=["qna"],
@@ -54,7 +55,7 @@ class qa(BaseModel):
     id: int
     content: str
     author: str
-    created_at: str
+    created_at: datetime
 
 class qaListResponse(BaseModel):
     result: List[qa]
@@ -95,8 +96,38 @@ async def read_item():
         "created_at": formatted_result["created_at"]
 
     }
-
-
+    
+@router.get("/following", summary="Qna 글 불러오기", response_model=qaListResponse)
+async def read_item(user_id: str = Header()):
+    """
+    팔로잉한 사람들의 Q&A 목록을 받아오는 EndPoint입니다.
+    
+    - **userId**: 작성자 ID (필수) (str)
+    """
+    
+    try:
+        query = """
+        SELECT * 
+        FROM qa q
+        JOIN following f ON f.follower = q.author
+        WHERE f.following = %s;
+        """
+        
+        params = [user_id]
+        
+        result = await database.execute_query(query, tuple(params)) 
+        formatted_result = [{"id": row['id'], "content": row['content'], "author": row['author'], "created_at":row['created_at']} for row in result]
+                
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="예상치 못한 오류가 발생했습니다."
+        )
+    
+    return {
+        "result": formatted_result
+    }
 
 class qa(BaseModel):
     content: str
