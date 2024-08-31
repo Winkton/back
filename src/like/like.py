@@ -10,6 +10,7 @@ router = APIRouter(
 
 class like(BaseModel):
     postID: int
+    post_type: str
 
 @router.post("", summary="좋아요 테이블 조회 및 좋아요 수 증가")
 async def insert_item(item: like, user_id: str = Header()):
@@ -30,18 +31,21 @@ async def insert_item(item: like, user_id: str = Header()):
         )
     
     try:
-        query = "SELECT user_id, post_id FROM `like` WHERE user_id = %s AND post_id = %s"
-        params = (user_id, item.postID)
+        query = "SELECT * FROM `like` WHERE user_id = %s AND post_id = %s AND post_type = %s"
+        params = (user_id, item.postID, item.post_type)
         # 쿼리 실행
         result = await database.execute_query(query, params)
-
         if len(result) == 0:
-            query = "INSERT INTO `like` (user_id, post_id) VALUES (%s, %s)"
-            params = (user_id, item.postID)
-
+            query = "INSERT INTO `like` (user_id, post_id, post_type) VALUES (%s, %s, %s)"
+            params = (user_id, item.postID, item.post_type)
+            await database.execute_query(query, params)
+            print("좋아요 수 증가")
+            return {"message": "like increased successfully"}
         else:
-            query = "DELETE FROM `like` WHERE user_id = %s"
-            params = (user_id)
+            query = "DELETE FROM `like` WHERE user_id = %s AND post_id = %s AND post_type = %s"
+            params = (user_id, item.postID, item.post_type)
+            await database.execute_query(query, params)
+            return {"message": "like decreased successfully"}
 
     except Exception as e:
         print(e)
@@ -52,7 +56,7 @@ async def insert_item(item: like, user_id: str = Header()):
     print("데이터 조회 완료")
 
 
-    print("좋아요 수 증가")
+    
 
 
     return {"message": "Data searched successfully"}
